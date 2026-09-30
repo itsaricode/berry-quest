@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berry Quest 🍓</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CUTE PIXEL GAME</p>
+        <h1>🍓 Berry Quest</h1>
+      </div>
+      <button id="soundBtn" class="icon-btn" aria-label="Toggle sound">🔊</button>
+    </header>
+
+    <section class="hud">
+      <div class="hud-item">🍓 <span>SCORE</span><strong id="score">0</strong></div>
+      <div class="hud-item">🏆 <span>BEST</span><strong id="best">0</strong></div>
+      <div class="hud-item">❤️ <span>LIVES</span><strong id="lives">3</strong></div>
+    </section>
+
+    <section class="game-card">
+      <div id="game" class="game">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="sun">☀</div>
+
+        <div id="player" class="player" aria-label="Berry Cat">
+          <div class="cat-ear left"></div>
+          <div class="cat-ear right"></div>
+          <div class="cat-face">🐱</div>
+        </div>
+
+        <div id="ground" class="ground"></div>
+
+        <div id="message" class="message">
+          <div class="message-box">
+            <div class="big-icon">🍓</div>
+            <h2>Berry Quest</h2>
+            <p>Collect berries, dodge the grumpy creatures, and beat your best score!</p>
+            <button id="startBtn" class="main-btn">START GAME ✨</button>
+            <p class="controls">← → move &nbsp; • &nbsp; ↑ / SPACE jump</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mobile-controls">
+      <button data-key="ArrowLeft">←</button>
+      <button data-key="Space" class="jump">♡ JUMP ♡</button>
+      <button data-key="ArrowRight">→</button>
+    </div>
+
+    <p class="tip">Tip: Golden berries are worth more! ✨</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
