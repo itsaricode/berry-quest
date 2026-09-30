@@ -8,7 +8,7 @@ A cute mini browser game made with **HTML, CSS and vanilla JavaScript**.
 - **↑ / Space** Jump
 - Collect strawberries for points
 - Golden strawberries give **+50**
-- Avoid the snail 🐌 and bee 🐝
+- Avoid the snail 🐌 and bee 🐝, or jump on them to smash them for +25 points
 - You have **3 lives**
 - Try to beat your saved high score 🏆
 

@@ -140,7 +140,8 @@ function spawnEnemy() {
   el.className = `enemy ${bee ? "bee" : "snail"}`;
   el.textContent = bee ? "🐝" : "🐌";
 
-  const x = 25 + Math.random() * 65;
+  // Enemies enter from a wall and travel across the screen.
+  const x = Math.random() > 0.5 ? -5 : 101;
   const y = bee ? 85 + Math.random() * 80 : 0;
 
   el.style.left = `${x}%`;
@@ -155,7 +156,7 @@ function spawnEnemy() {
     w: 46,
     h: 46,
     speed: (bee ? 18 : 10) + Math.random() * 12,
-    direction: Math.random() > .5 ? 1 : -1,
+    direction: x < 0 ? 1 : -1,
     baseY: GROUND_HEIGHT() + y
   });
 }
@@ -248,36 +249,82 @@ function gameLoop(timestamp) {
     }
 
     const pRect = playerRect();
+    const gameRect = game.getBoundingClientRect();
 
-    objects.forEach((obj, index) => {
+    // Work backwards so objects can safely be removed during this loop.
+    for (let index = objects.length - 1; index >= 0; index--) {
+      const obj = objects[index];
+
       if (obj.type === "enemy") {
+        // Enemies keep moving in one direction instead of bouncing.
         obj.x += obj.direction * obj.speed * dt;
-        if (obj.x < 10 || obj.x > 92) obj.direction *= -1;
         obj.el.style.left = `${obj.x}%`;
 
         if (obj.baseY > GROUND_HEIGHT() + 40) {
           obj.el.style.bottom = `${obj.baseY}px`;
         }
-      }
 
-      const rect = obj.el.getBoundingClientRect();
+        const rect = obj.el.getBoundingClientRect();
 
-      if (rectsOverlap(pRect, rect)) {
-        if (obj.type === "enemy") {
+        // 🌟 Jumping on an enemy from above smashes it.
+        const playerIsFalling = velocityY <= 0;
+        const playerAboveEnemy = pRect.bottom <= rect.top + 18;
+
+        if (
+          rectsOverlap(pRect, rect) &&
+          jumping &&
+          playerIsFalling &&
+          playerAboveEnemy
+        ) {
+          obj.el.remove();
+          objects.splice(index, 1);
+
+          // Bounce the player after a successful stomp.
+          playerY = Math.max(playerY, 8);
+          velocityY = 620;
+          jumping = true;
+
+          score += 25;
+          if (score > best) {
+            best = score;
+            localStorage.setItem("berryQuestBest", best);
+          }
+          updateHUD();
+          beep(980, 0.08);
+          continue;
+        }
+
+        // Touching an enemy normally costs one life.
+        if (rectsOverlap(pRect, rect)) {
           obj.el.remove();
           objects.splice(index, 1);
           hurt();
-        } else {
+          continue;
+        }
+
+        // 🚪 Enemy reaches either wall and disappears.
+        const outside =
+          rect.right < gameRect.left - 10 ||
+          rect.left > gameRect.right + 10;
+
+        if (outside) {
+          obj.el.remove();
+          objects.splice(index, 1);
+        }
+      } else {
+        const rect = obj.el.getBoundingClientRect();
+
+        if (rectsOverlap(pRect, rect)) {
           collectObject(obj, index);
+          continue;
+        }
+
+        if (rect.right < gameRect.left - 50) {
+          obj.el.remove();
+          objects.splice(index, 1);
         }
       }
-
-      const gameRect = game.getBoundingClientRect();
-      if (rect.right < gameRect.left - 50) {
-        obj.el.remove();
-        objects.splice(index, 1);
-      }
-    });
+    }
   }
 
   requestAnimationFrame(gameLoop);
