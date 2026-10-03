@@ -770,16 +770,17 @@ const moving =
 
 if (movingLeft) {
 
-  playerX -=
-    32 * dt;
+  playerX -= 32 * dt;
+
+  playerSprite.style.transform = "scaleX(-1)";
 
 }
 
-
 if (movingRight) {
 
-  playerX +=
-    32 * dt;
+  playerX += 32 * dt;
+
+  playerSprite.style.transform = "scaleX(1)";
 
 }
 
