@@ -186,37 +186,42 @@ h1 {
   border-top: 5px solid #72b968;
 }
 
+/* =========================================
+   BERRY GIRL
+========================================= */
+
 .player {
   position: absolute;
   z-index: 5;
-  width: 58px;
-  height: 68px;
+
+  width: 72px;
+  height: 86px;
+
   left: 8%;
   bottom: 28%;
-  display: grid;
-  place-items: center;
-  transition: transform .08s linear;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
   user-select: none;
+  pointer-events: none;
+
+  transition: left 0.08s linear;
 }
 
-.cat-face {
-  font-size: 48px;
-  line-height: 1;
-  filter: drop-shadow(3px 3px 0 rgba(84,61,73,.25));
-}
+#playerSprite {
+  width: 100%;
+  height: 100%;
 
-.cat-ear {
-  position: absolute;
-  top: 10px;
-  width: 14px;
-  height: 14px;
-  background: #ffb1cc;
-  transform: rotate(45deg);
-  z-index: -1;
-}
+  object-fit: contain;
 
-.cat-ear.left { left: 9px; }
-.cat-ear.right { right: 9px; }
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+
+  user-select: none;
+  pointer-events: none;
+}
 
 .berry, .golden-berry {
   position: absolute;
