@@ -166,52 +166,38 @@ player.style.bottom = `${bottom}px`;
 // CHARACTER ANIMATION
 // =========================================
 
-function playAnimation(name, speed = 0.12) {
+function playAnimation(name, speed = 0.12, dt = 0.016) {
 
-if (!characterSprites[name]) return;
+  if (!characterSprites[name]) return;
 
-// If animation changed, start from first frame.
-if (currentAnimation !== name) {
+  // Animation changed → start from first frame
+  if (currentAnimation !== name) {
 
+    currentAnimation = name;
+    animationFrame = 0;
+    animationTimer = 0;
 
-currentAnimation = name;
+    playerSprite.src = characterSprites[name][0];
 
-animationFrame = 0;
+    return;
+  }
 
-animationTimer = 0;
+  // Use real game-loop delta time
+  animationTimer += dt;
 
-playerSprite.src =
-  characterSprites[name][0];
+  if (animationTimer >= speed) {
 
-return;
+    animationTimer = 0;
 
+    animationFrame++;
 
-}
+    if (animationFrame >= characterSprites[name].length) {
+      animationFrame = 0;
+    }
 
-animationTimer += 0.016;
-
-if (animationTimer >= speed) {
-
-
-animationTimer = 0;
-
-animationFrame++;
-
-if (
-  animationFrame >=
-  characterSprites[name].length
-) {
-
-  animationFrame = 0;
-
-}
-
-playerSprite.src =
-  characterSprites[name][animationFrame];
-
-
-}
-
+    playerSprite.src =
+      characterSprites[name][animationFrame];
+  }
 }
 
 // =========================================
@@ -406,25 +392,25 @@ playerSprite.src =
 
 function jump() {
 
-if (!running) return;
+  if (!running) return;
 
-if (jumping) return;
+  // Don't allow double jump
+  if (jumping) return;
 
-jumping = true;
+  jumping = true;
 
-velocityY = 700;
+  velocityY = 700;
 
-currentAnimation = "jump";
+  currentAnimation = "jump";
 
-animationFrame = 0;
+  animationFrame = 0;
 
-animationTimer = 0;
+  animationTimer = 0;
 
-playerSprite.src =
-characterSprites.jump[0];
+  playerSprite.src =
+    characterSprites.jump[0];
 
-beep(850, 0.06);
-
+  beep(850, 0.06);
 }
 
 // =========================================
@@ -841,31 +827,21 @@ if (jumping) {
 
 if (jumping) {
 
-  playAnimation(
-    "jump",
-    0.12
-  );
+  playAnimation("jump", 0.12, dt);
 
 }
 
 else if (moving) {
 
-  playAnimation(
-    "run",
-    0.09
-  );
+  playAnimation("run", 0.09, dt);
 
 }
 
 else {
 
-  playAnimation(
-    "idle",
-    0.45
-  );
+  playAnimation("idle", 0.45, dt);
 
 }
-
 
 setPlayerPosition();
 
