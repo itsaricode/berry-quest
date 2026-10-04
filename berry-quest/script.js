@@ -253,6 +253,8 @@ animationFrame = 0;
 
 animationTimer = 0;
 
+playerSprite.style.transform = "scaleX(1)";
+
 playerSprite.src =
 characterSprites.idle[0];
 
@@ -301,6 +303,8 @@ currentAnimation = "idle";
 animationFrame = 0;
 
 animationTimer = 0;
+
+playerSprite.style.transform = "scaleX(1)";
 
 playerSprite.src =
 characterSprites.idle[0];
@@ -848,15 +852,25 @@ if (jumping) {
     1750 * dt;
 
 
-  if (playerY <= 0) {
+if (playerY <= 0) {
 
-    playerY = 0;
+  playerY = 0;
 
-    velocityY = 0;
+  velocityY = 0;
 
-    jumping = false;
+  jumping = false;
 
-  }
+  // Back to idle after landing
+  currentAnimation = "idle";
+
+  animationFrame = 0;
+
+  animationTimer = 0;
+
+  setSprite(
+    characterSprites.idle[0]
+  );
+}
 
 }
 
