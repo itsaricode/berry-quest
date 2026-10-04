@@ -801,20 +801,24 @@ const moving =
   movingRight;
 
 
+/* =========================================
+   PLAYER MOVEMENT
+========================================= */
+
 if (movingLeft) {
 
-  playerX -= 32 * dt;
+  playerX -= 45 * dt;
 
+  // Face LEFT
   playerSprite.style.transform = "scaleX(-1)";
-
 }
 
 if (movingRight) {
 
-  playerX += 32 * dt;
+  playerX += 45 * dt;
 
+  // Face RIGHT
   playerSprite.style.transform = "scaleX(1)";
-
 }
 
 
