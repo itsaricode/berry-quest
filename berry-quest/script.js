@@ -427,21 +427,23 @@ function jump() {
 
   if (!running) return;
 
-  // Don't allow double jump
+  // No double jump
   if (jumping) return;
 
   jumping = true;
 
+  // Jump force
   velocityY = 700;
 
-  currentAnimation = "jump";
-
-  animationFrame = 0;
-
+  // Reset animation timer
   animationTimer = 0;
 
-  playerSprite.src =
-    characterSprites.jump[0];
+  // Start with jump pose
+  currentAnimation = "jump";
+
+  setSprite(
+    characterSprites.jump[0]
+  );
 
   beep(850, 0.06);
 }
