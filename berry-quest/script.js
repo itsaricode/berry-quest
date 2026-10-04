@@ -162,41 +162,74 @@ player.style.bottom = `${bottom}px`;
 
 }
 
-// =========================================
-// CHARACTER ANIMATION
-// =========================================
+/* =========================================
+   CHARACTER ANIMATION SYSTEM
+========================================= */
 
-function playAnimation(name, speed = 0.12, dt = 0.016) {
-
-  if (!characterSprites[name]) return;
-
-  // Animation changed → start from first frame
-  if (currentAnimation !== name) {
-
-    currentAnimation = name;
-    animationFrame = 0;
-    animationTimer = 0;
-
-    playerSprite.src = characterSprites[name][0];
-
-    return;
+function setSprite(src) {
+  if (playerSprite.getAttribute("src") !== src) {
+    playerSprite.src = src;
   }
+}
 
-  // Use real game-loop delta time
+function updateRunAnimation(dt) {
+
   animationTimer += dt;
 
-  if (animationTimer >= speed) {
+  if (animationTimer >= 0.07) {
 
     animationTimer = 0;
 
     animationFrame++;
 
-    if (animationFrame >= characterSprites[name].length) {
+    if (animationFrame >= characterSprites.run.length) {
       animationFrame = 0;
     }
 
-    playerSprite.src =
-      characterSprites[name][animationFrame];
+    setSprite(
+      characterSprites.run[animationFrame]
+    );
+  }
+}
+
+function updateIdleAnimation(dt) {
+
+  animationTimer += dt;
+
+  if (animationTimer >= 0.45) {
+
+    animationTimer = 0;
+
+    animationFrame++;
+
+    if (animationFrame >= characterSprites.idle.length) {
+      animationFrame = 0;
+    }
+
+    setSprite(
+      characterSprites.idle[animationFrame]
+    );
+  }
+}
+
+function updateJumpAnimation() {
+
+  // Going UP
+  if (velocityY > 180) {
+
+    setSprite(
+      characterSprites.jump[0]
+    );
+
+  }
+
+  // Falling DOWN
+  else {
+
+    setSprite(
+      characterSprites.jump[1]
+    );
+
   }
 }
 
