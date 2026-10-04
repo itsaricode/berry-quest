@@ -863,24 +863,53 @@ if (jumping) {
 // CHARACTER ANIMATION
 // -------------------------------------
 
+/* =========================================
+   CHARACTER ANIMATION
+========================================= */
+
 if (jumping) {
 
-  playAnimation("jump", 0.12, dt);
+  // Jump animation
+  updateJumpAnimation();
 
 }
 
 else if (moving) {
 
-  playAnimation("run", 0.09, dt);
+  // Reset animation when starting to run
+  if (currentAnimation !== "run") {
+
+    currentAnimation = "run";
+    animationFrame = 0;
+    animationTimer = 0;
+
+    setSprite(
+      characterSprites.run[0]
+    );
+  }
+
+  // Play running frames
+  updateRunAnimation(dt);
 
 }
 
 else {
 
-  playAnimation("idle", 0.45, dt);
+  // Reset animation when stopping
+  if (currentAnimation !== "idle") {
 
+    currentAnimation = "idle";
+    animationFrame = 0;
+    animationTimer = 0;
+
+    setSprite(
+      characterSprites.idle[0]
+    );
+  }
+
+  // Play idle frames
+  updateIdleAnimation(dt);
 }
-
 setPlayerPosition();
 
 
