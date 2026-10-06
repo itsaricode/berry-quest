@@ -40,36 +40,56 @@ let soundEnabled = true;
 let audioCtx = null;
 
 // =========================================
-// CHARACTER ASSETS
+// CHARACTER ANIMATIONS
 // =========================================
 
-const characterSprites = {
+const animations = {
 
-idle: [
-"assets/character/idle-1.png",
-"assets/character/idle-2.png"
-],
+  idle: {
+    frames: [
+      "assets/character/idle-1.png",
+      "assets/character/idle-2.png"
+    ],
+    frameDuration: 0.45,
+    loop: true
+  },
 
-run: [
-"assets/character/run-1.png",
-"assets/character/run-2.png",
-"assets/character/run-3.png",
-"assets/character/run-4.png"
-],
+  run: {
+    frames: [
+      "assets/character/run-1.png",
+      "assets/character/run-2.png",
+      "assets/character/run-3.png",
+      "assets/character/run-4.png"
+    ],
+    frameDuration: 0.07,
+    loop: true
+  },
 
-jump: [
-"assets/character/jump-1.png",
-"assets/character/jump-2.png"
-],
+  jump: {
+    frames: [
+      "assets/character/jump-1.png",
+      "assets/character/jump-2.png"
+    ],
+    frameDuration: 0.12,
+    loop: false
+  },
 
-hurt: [
-"assets/character/hurt.png"
-],
+  hurt: {
+    frames: [
+      "assets/character/hurt.png"
+    ],
+    frameDuration: 0.3,
+    loop: false
+  },
 
-happy: [
-"assets/character/happy-1.png",
-"assets/character/happy-2.png"
-]
+  happy: {
+    frames: [
+      "assets/character/happy-1.png",
+      "assets/character/happy-2.png"
+    ],
+    frameDuration: 0.18,
+    loop: false
+  }
 
 };
 
