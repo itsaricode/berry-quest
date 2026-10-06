@@ -94,13 +94,14 @@ const animations = {
 };
 
 // =========================================
-// CHARACTER ANIMATION VARIABLES
+// CHARACTER ANIMATION STATE
 // =========================================
 
-let currentAnimation = "idle";
-let animationFrame = 0;
-let animationTimer = 0;
+let currentState = "idle";
 
+let animationFrame = 0;
+
+let animationTimer = 0;
 // =========================================
 // INITIAL HUD
 // =========================================
