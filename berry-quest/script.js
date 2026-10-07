@@ -277,6 +277,57 @@ function updateJumpAnimation() {
 }
 
 // =========================================
+// ANIMATION ENGINE
+// =========================================
+
+function updateAnimation(dt) {
+
+  const animation = animations[currentState];
+
+  if (!animation) return;
+
+  // Add real game-loop time.
+  animationTimer += dt;
+
+  // Has the current frame lasted long enough?
+  if (animationTimer >= animation.frameDuration) {
+
+    animationTimer -= animation.frameDuration;
+
+    animationFrame++;
+
+    // -----------------------------------------
+    // LOOPING ANIMATIONS
+    // -----------------------------------------
+
+    if (animation.loop) {
+
+      if (animationFrame >= animation.frames.length) {
+        animationFrame = 0;
+      }
+
+    }
+
+    // -----------------------------------------
+    // ONE-TIME ANIMATIONS
+    // -----------------------------------------
+
+    else {
+
+      if (animationFrame >= animation.frames.length) {
+        animationFrame = animation.frames.length - 1;
+      }
+
+    }
+
+    // Show current frame.
+    playerSprite.src =
+      animation.frames[animationFrame];
+  }
+}
+
+
+// =========================================
 // RESET CHARACTER
 // =========================================
 
