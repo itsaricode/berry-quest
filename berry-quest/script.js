@@ -105,14 +105,25 @@ let animationTimer = 0;
 
 
 // =========================================
-// CHARACTER ANIMATION STATE
+// CHANGE PLAYER STATE
 // =========================================
 
-let currentState = "idle";
+function setPlayerState(newState) {
 
-let animationFrame = 0;
+  if (!animations[newState]) return;
 
-let animationTimer = 0;
+  if (currentState === newState) return;
+
+  currentState = newState;
+
+  animationFrame = 0;
+
+  animationTimer = 0;
+
+  playerSprite.src =
+    animations[newState].frames[0];
+}
+
 // =========================================
 // INITIAL HUD
 // =========================================
