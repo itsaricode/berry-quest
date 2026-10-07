@@ -968,54 +968,6 @@ if (playerY <= 0) {
 // CHARACTER ANIMATION
 // -------------------------------------
 
-/* =========================================
-   CHARACTER ANIMATION
-========================================= */
-
-if (jumping) {
-
-  // Jump animation
-  updateJumpAnimation();
-
-}
-
-else if (moving) {
-
-  // Reset animation when starting to run
-  if (currentAnimation !== "run") {
-
-    currentAnimation = "run";
-    animationFrame = 0;
-    animationTimer = 0;
-
-    setSprite(
-      characterSprites.run[0]
-    );
-  }
-
-  // Play running frames
-  updateRunAnimation(dt);
-
-}
-
-else {
-
-  // Reset animation when stopping
-  if (currentAnimation !== "idle") {
-
-    currentAnimation = "idle";
-    animationFrame = 0;
-    animationTimer = 0;
-
-    setSprite(
-      characterSprites.idle[0]
-    );
-  }
-
-  // Play idle frames
-  updateIdleAnimation(dt);
-}
-
 updateAnimation(dt);
 
 
