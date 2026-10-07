@@ -102,6 +102,17 @@ let currentState = "idle";
 let animationFrame = 0;
 
 let animationTimer = 0;
+
+
+// =========================================
+// CHARACTER ANIMATION STATE
+// =========================================
+
+let currentState = "idle";
+
+let animationFrame = 0;
+
+let animationTimer = 0;
 // =========================================
 // INITIAL HUD
 // =========================================
