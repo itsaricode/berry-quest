@@ -39,6 +39,7 @@ let hitCooldown = 0;
 let soundEnabled = true;
 let audioCtx = null;
 
+
 // =========================================
 // CHARACTER ANIMATIONS
 // =========================================
@@ -61,7 +62,7 @@ const animations = {
       "assets/character/run-3.png",
       "assets/character/run-4.png"
     ],
-    frameDuration: 0.07,
+    frameDuration: 0.09,
     loop: true
   },
 
@@ -88,20 +89,32 @@ const animations = {
       "assets/character/happy-2.png"
     ],
     frameDuration: 0.18,
-    loop: false
+    loop: true
   }
 
 };
 
+
 // =========================================
-// CHARACTER ANIMATION STATE
+// ANIMATION STATE
 // =========================================
 
 let currentState = "idle";
-
 let animationFrame = 0;
-
 let animationTimer = 0;
+
+
+// =========================================
+// SET SPRITE
+// =========================================
+
+function setSprite(src) {
+
+  if (playerSprite.getAttribute("src") !== src) {
+    playerSprite.src = src;
+  }
+
+}
 
 
 // =========================================
@@ -112,169 +125,20 @@ function setPlayerState(newState) {
 
   if (!animations[newState]) return;
 
+  // Don't restart the same animation every frame.
   if (currentState === newState) return;
 
   currentState = newState;
 
   animationFrame = 0;
-
   animationTimer = 0;
 
-  playerSprite.src =
-    animations[newState].frames[0];
-}
-
-// =========================================
-// INITIAL HUD
-// =========================================
-
-bestEl.textContent = best;
-
-// =========================================
-// GAME SIZE
-// =========================================
-
-const GAME_HEIGHT = () => game.clientHeight;
-
-const GROUND_HEIGHT = () => game.clientHeight * 0.28;
-
-// =========================================
-// SOUND
-// =========================================
-
-function beep(freq = 600, duration = 0.07, type = "square") {
-
-if (!soundEnabled) return;
-
-try {
-
-audioCtx ??= new (
-  window.AudioContext ||
-  window.webkitAudioContext
-)();
-
-const osc = audioCtx.createOscillator();
-const gain = audioCtx.createGain();
-
-osc.type = type;
-osc.frequency.value = freq;
-
-gain.gain.value = 0.035;
-
-osc.connect(gain);
-gain.connect(audioCtx.destination);
-
-osc.start();
-
-osc.stop(
-  audioCtx.currentTime + duration
-);
-
-
-} catch {}
+  setSprite(
+    animations[newState].frames[0]
+  );
 
 }
 
-// =========================================
-// HUD
-// =========================================
-
-function updateHUD() {
-
-scoreEl.textContent = score;
-
-bestEl.textContent = best;
-
-livesEl.textContent = lives;
-
-}
-
-// =========================================
-// CHARACTER POSITION
-// =========================================
-
-function setPlayerPosition() {
-
-const ground = GROUND_HEIGHT();
-
-const bottom = ground + playerY;
-
-player.style.left = `${playerX}%`;
-
-player.style.bottom = `${bottom}px`;
-
-}
-
-/* =========================================
-   CHARACTER ANIMATION SYSTEM
-========================================= */
-
-function setSprite(src) {
-  if (playerSprite.getAttribute("src") !== src) {
-    playerSprite.src = src;
-  }
-}
-
-function updateRunAnimation(dt) {
-
-  animationTimer += dt;
-
-  if (animationTimer >= 0.07) {
-
-    animationTimer = 0;
-
-    animationFrame++;
-
-    if (animationFrame >= characterSprites.run.length) {
-      animationFrame = 0;
-    }
-
-    setSprite(
-      characterSprites.run[animationFrame]
-    );
-  }
-}
-
-function updateIdleAnimation(dt) {
-
-  animationTimer += dt;
-
-  if (animationTimer >= 0.45) {
-
-    animationTimer = 0;
-
-    animationFrame++;
-
-    if (animationFrame >= characterSprites.idle.length) {
-      animationFrame = 0;
-    }
-
-    setSprite(
-      characterSprites.idle[animationFrame]
-    );
-  }
-}
-
-function updateJumpAnimation() {
-
-  // Going UP
-  if (velocityY > 180) {
-
-    setSprite(
-      characterSprites.jump[0]
-    );
-
-  }
-
-  // Falling DOWN
-  else {
-
-    setSprite(
-      characterSprites.jump[1]
-    );
-
-  }
-}
 
 // =========================================
 // ANIMATION ENGINE
@@ -286,75 +150,186 @@ function updateAnimation(dt) {
 
   if (!animation) return;
 
-  // Add real game-loop time.
   animationTimer += dt;
 
-  // Has the current frame lasted long enough?
-  if (animationTimer >= animation.frameDuration) {
+  if (
+    animationTimer >=
+    animation.frameDuration
+  ) {
 
-    animationTimer -= animation.frameDuration;
+    animationTimer -=
+      animation.frameDuration;
 
     animationFrame++;
 
-    // -----------------------------------------
-    // LOOPING ANIMATIONS
-    // -----------------------------------------
-
+    // LOOP
     if (animation.loop) {
 
-      if (animationFrame >= animation.frames.length) {
+      if (
+        animationFrame >=
+        animation.frames.length
+      ) {
+
         animationFrame = 0;
+
       }
 
     }
 
-    // -----------------------------------------
-    // ONE-TIME ANIMATIONS
-    // -----------------------------------------
-
+    // ONE TIME
     else {
 
-      if (animationFrame >= animation.frames.length) {
-        animationFrame = animation.frames.length - 1;
+      if (
+        animationFrame >=
+        animation.frames.length
+      ) {
+
+        animationFrame =
+          animation.frames.length - 1;
+
       }
 
     }
 
-    // Show current frame.
-    playerSprite.src =
-      animation.frames[animationFrame];
+    setSprite(
+      animation.frames[animationFrame]
+    );
+
   }
+
 }
 
 
 // =========================================
-// RESET CHARACTER
+// INITIAL HUD
+// =========================================
+
+bestEl.textContent = best;
+
+
+// =========================================
+// GAME SIZE
+// =========================================
+
+const GAME_HEIGHT = () =>
+  game.clientHeight;
+
+const GROUND_HEIGHT = () =>
+  game.clientHeight * 0.28;
+
+
+// =========================================
+// SOUND
+// =========================================
+
+function beep(
+  freq = 600,
+  duration = 0.07,
+  type = "square"
+) {
+
+  if (!soundEnabled) return;
+
+  try {
+
+    audioCtx ??= new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+
+    const osc =
+      audioCtx.createOscillator();
+
+    const gain =
+      audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.value = freq;
+
+    gain.gain.value = 0.035;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+
+    osc.stop(
+      audioCtx.currentTime +
+      duration
+    );
+
+  } catch {}
+
+}
+
+
+// =========================================
+// HUD
+// =========================================
+
+function updateHUD() {
+
+  scoreEl.textContent = score;
+
+  bestEl.textContent = best;
+
+  livesEl.textContent = lives;
+
+}
+
+
+// =========================================
+// CHARACTER POSITION
+// =========================================
+
+function setPlayerPosition() {
+
+  const ground =
+    GROUND_HEIGHT();
+
+  const bottom =
+    ground + playerY;
+
+  player.style.left =
+    `${playerX}%`;
+
+  player.style.bottom =
+    `${bottom}px`;
+
+}
+
+
+// =========================================
+// RESET PLAYER
 // =========================================
 
 function resetPlayer() {
 
-playerX = 8;
+  playerX = 8;
 
-playerY = 0;
+  playerY = 0;
 
-velocityY = 0;
+  velocityY = 0;
 
-jumping = false;
+  jumping = false;
 
-currentAnimation = "idle";
+  currentState = "idle";
 
-animationFrame = 0;
+  animationFrame = 0;
 
-animationTimer = 0;
+  animationTimer = 0;
 
-playerSprite.style.transform = "scaleX(1)";
+  playerSprite.style.transform =
+    "scaleX(1)";
 
-playerSprite.src =
-characterSprites.idle[0];
+  setSprite(
+    animations.idle.frames[0]
+  );
 
-setPlayerPosition();
+  setPlayerPosition();
 
 }
+
 
 // =========================================
 // START GAME
@@ -362,51 +337,57 @@ setPlayerPosition();
 
 function startGame() {
 
-objects.forEach(object => {
+  objects.forEach(object => {
 
+    object.el.remove();
 
-object.el.remove();
+  });
 
+  objects = [];
 
-});
+  score = 0;
 
-objects = [];
+  lives = 3;
 
-score = 0;
+  playerX = 8;
 
-lives = 3;
+  playerY = 0;
 
-playerX = 8;
+  velocityY = 0;
 
-playerY = 0;
+  jumping = false;
 
-velocityY = 0;
+  hitCooldown = 0;
 
-jumping = false;
+  spawnTimer = 0;
 
-hitCooldown = 0;
+  enemyTimer = 0;
 
-spawnTimer = 0;
+  running = true;
 
-enemyTimer = 0;
+  currentState = "idle";
 
-running = true;
+  animationFrame = 0;
 
-currentState = "idle";
-animationFrame = 0;
-animationTimer = 0;
+  animationTimer = 0;
 
-setPlayerState("idle");
+  playerSprite.style.transform =
+    "scaleX(1)";
 
-message.classList.add("hidden");
+  setSprite(
+    animations.idle.frames[0]
+  );
 
-updateHUD();
+  message.classList.add("hidden");
 
-setPlayerPosition();
+  updateHUD();
 
-beep(700, 0.08);
+  setPlayerPosition();
+
+  beep(700, 0.08);
 
 }
+
 
 // =========================================
 // GAME OVER
@@ -414,103 +395,109 @@ beep(700, 0.08);
 
 function endGame() {
 
-running = false;
+  running = false;
 
-// Save best score.
-if (score > best) {
+  if (score > best) {
 
+    best = score;
 
-best = score;
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
 
-localStorage.setItem(
-  "berryQuestBest",
-  best
-);
+  }
 
+  updateHUD();
 
-}
+  if (score > 0 && score >= best) {
 
-updateHUD();
+    playHappyAnimation();
 
-// Happy animation if the player achieved
-// a new high score.
-if (score > 0 && score >= best) {
+  }
 
+  message.querySelector("h2").textContent =
+    "Game Over 💗";
 
-playHappyAnimation();
+  message.querySelector(".big-icon").textContent =
+    score >= best && score > 0
+      ? "🏆"
+      : "🍓";
 
-
-}
-
-message.querySelector("h2").textContent =
-"Game Over 💗";
-
-message.querySelector(".big-icon").textContent =
-score >= best && score > 0
-? "🏆"
-: "🍓";
-
-message.querySelector(
-".message-box p"
-).innerHTML =
-`You collected <strong>${score}</strong> points!<br>
+  message.querySelector(
+    ".message-box p"
+  ).innerHTML =
+    `You collected <strong>${score}</strong> points!<br>
      Best score: <strong>${best}</strong>`;
 
-startBtn.textContent =
-"PLAY AGAIN ✨";
+  startBtn.textContent =
+    "PLAY AGAIN ✨";
 
-message.classList.remove("hidden");
+  message.classList.remove("hidden");
 
-beep(180, 0.2, "sawtooth");
+  beep(
+    180,
+    0.2,
+    "sawtooth"
+  );
 
 }
 
+
 // =========================================
-// HAPPY CELEBRATION
+// HAPPY ANIMATION
 // =========================================
 
 function playHappyAnimation() {
 
-let frame = 0;
+  currentState = "happy";
 
-const happyFrames =
-characterSprites.happy;
+  animationFrame = 0;
+  animationTimer = 0;
 
-playerSprite.src =
-happyFrames[0];
+  setSprite(
+    animations.happy.frames[0]
+  );
 
-const happyTimer =
-setInterval(() => {
+  const happyTimer =
+    setInterval(() => {
 
+      animationFrame++;
 
-  frame++;
+      if (
+        animationFrame >=
+        animations.happy.frames.length
+      ) {
 
-  if (
-    frame >=
-    happyFrames.length
-  ) {
+        animationFrame = 0;
 
-    frame = 0;
+      }
 
-  }
+      setSprite(
+        animations.happy.frames[
+          animationFrame
+        ]
+      );
 
-  playerSprite.src =
-    happyFrames[frame];
+    }, 180);
 
-}, 180);
+  setTimeout(() => {
 
+    clearInterval(happyTimer);
 
-setTimeout(() => {
+    currentState = "idle";
 
-clearInterval(happyTimer);
+    animationFrame = 0;
+    animationTimer = 0;
 
-playerSprite.src =
-  characterSprites.happy[0];
+    setSprite(
+      animations.idle.frames[0]
+    );
 
-
-}, 1800);
+  }, 1800);
 
 }
+
 
 // =========================================
 // JUMP
@@ -520,26 +507,28 @@ function jump() {
 
   if (!running) return;
 
-  // No double jump
   if (jumping) return;
 
   jumping = true;
 
-  // Jump force
   velocityY = 700;
 
-  // Reset animation timer
+  animationFrame = 0;
   animationTimer = 0;
 
-  // Start with jump pose
-  currentAnimation = "jump";
+  currentState = "jump";
 
   setSprite(
-    characterSprites.jump[0]
+    animations.jump.frames[0]
   );
 
-  beep(850, 0.06);
+  beep(
+    850,
+    0.06
+  );
+
 }
+
 
 // =========================================
 // SPAWN STRAWBERRY
@@ -547,59 +536,58 @@ function jump() {
 
 function spawnBerry() {
 
-const el =
-document.createElement("div");
+  const el =
+    document.createElement("div");
 
-const golden =
-Math.random() < 0.12;
+  const golden =
+    Math.random() < 0.12;
 
-el.className =
-golden
-? "golden-berry"
-: "berry";
+  el.className =
+    golden
+      ? "golden-berry"
+      : "berry";
 
-el.textContent =
-golden
-? "✨🍓"
-: "🍓";
+  el.textContent =
+    golden
+      ? "✨🍓"
+      : "🍓";
 
-const x =
-18 + Math.random() * 72;
+  const x =
+    18 + Math.random() * 72;
 
-const y =
-35 + Math.random() * 38;
+  const y =
+    35 + Math.random() * 38;
 
-el.style.left =
-`${x}%`;
+  el.style.left =
+    `${x}%`;
 
-el.style.bottom =
-`${GROUND_HEIGHT() + y}px`;
+  el.style.bottom =
+    `${GROUND_HEIGHT() + y}px`;
 
-game.appendChild(el);
+  game.appendChild(el);
 
-objects.push({
+  objects.push({
 
+    type:
+      golden
+        ? "golden"
+        : "berry",
 
-type:
-  golden
-    ? "golden"
-    : "berry",
+    el,
 
-el,
+    x,
 
-x,
+    y:
+      GROUND_HEIGHT() + y,
 
-y:
-  GROUND_HEIGHT() + y,
+    w: 38,
 
-w: 38,
+    h: 38
 
-h: 38
-
-
-});
+  });
 
 }
+
 
 // =========================================
 // SPAWN ENEMY
@@ -607,71 +595,69 @@ h: 38
 
 function spawnEnemy() {
 
-const el =
-document.createElement("div");
+  const el =
+    document.createElement("div");
 
-const bee =
-Math.random() < 0.35;
+  const bee =
+    Math.random() < 0.35;
 
-el.className =
-`enemy ${bee ? "bee" : "snail"}`;
+  el.className =
+    `enemy ${bee ? "bee" : "snail"}`;
 
-el.textContent =
-bee
-? "🐝"
-: "🐌";
+  el.textContent =
+    bee
+      ? "🐝"
+      : "🐌";
 
-// Enemy enters from either wall.
-const x =
-Math.random() > 0.5
-? -5
-: 101;
+  const x =
+    Math.random() > 0.5
+      ? -5
+      : 101;
 
-const y =
-bee
-? 85 + Math.random() * 80
-: 0;
+  const y =
+    bee
+      ? 85 + Math.random() * 80
+      : 0;
 
-el.style.left =
-`${x}%`;
+  el.style.left =
+    `${x}%`;
 
-el.style.bottom =
-`${GROUND_HEIGHT() + y}px`;
+  el.style.bottom =
+    `${GROUND_HEIGHT() + y}px`;
 
-game.appendChild(el);
+  game.appendChild(el);
 
-objects.push({
+  objects.push({
 
+    type: "enemy",
 
-type: "enemy",
+    el,
 
-el,
+    x,
 
-x,
+    y:
+      GROUND_HEIGHT() + y,
 
-y:
-  GROUND_HEIGHT() + y,
+    w: 46,
 
-w: 46,
+    h: 46,
 
-h: 46,
+    speed:
+      (bee ? 18 : 10) +
+      Math.random() * 12,
 
-speed:
-  (bee ? 18 : 10) +
-  Math.random() * 12,
+    direction:
+      x < 0
+        ? 1
+        : -1,
 
-direction:
-  x < 0
-    ? 1
-    : -1,
+    baseY:
+      GROUND_HEIGHT() + y
 
-baseY:
-  GROUND_HEIGHT() + y
-
-
-});
+  });
 
 }
+
 
 // =========================================
 // COLLISION
@@ -679,64 +665,76 @@ baseY:
 
 function rectsOverlap(a, b) {
 
-return !(
-a.right < b.left ||
-a.left > b.right ||
-a.bottom < b.top ||
-a.top > b.bottom
-);
+  return !(
+    a.right < b.left ||
+    a.left > b.right ||
+    a.bottom < b.top ||
+    a.top > b.bottom
+  );
 
 }
+
 
 function playerRect() {
 
-return player.getBoundingClientRect();
+  return player.getBoundingClientRect();
 
 }
+
 
 // =========================================
 // COLLECT STRAWBERRY
 // =========================================
 
-function collectObject(obj, index) {
+function collectObject(
+  obj,
+  index
+) {
 
-obj.el.remove();
+  obj.el.remove();
 
-objects.splice(index, 1);
+  objects.splice(
+    index,
+    1
+  );
 
-if (obj.type === "golden") {
+  if (
+    obj.type === "golden"
+  ) {
 
+    score += 50;
 
-score += 50;
+    beep(
+      1100,
+      0.12
+    );
 
-beep(1100, 0.12);
+  } else {
 
+    score += 10;
 
-} else {
+    beep(
+      760,
+      0.06
+    );
 
-score += 10;
+  }
 
-beep(760, 0.06);
+  if (score > best) {
 
+    best = score;
+
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
+
+  }
+
+  updateHUD();
 
 }
 
-if (score > best) {
-
-
-best = score;
-
-localStorage.setItem(
-  "berryQuestBest",
-  best
-);
-
-
-}
-
-updateHUD();
-
-}
 
 // =========================================
 // PLAYER HURT
@@ -744,117 +742,121 @@ updateHUD();
 
 function hurt() {
 
-if (hitCooldown > 0) return;
+  if (hitCooldown > 0)
+    return;
 
-lives--;
+  lives--;
 
-hitCooldown = 1.2;
+  hitCooldown = 1.2;
 
-// Hurt animation.
-currentAnimation = "hurt";
-
-animationFrame = 0;
-
-animationTimer = 0;
-
-playerSprite.src =
-characterSprites.hurt[0];
-
-player.classList.add("flash");
-
-setTimeout(() => {
-
-
-player.classList.remove("flash");
-
-
-if (running) {
-
-  currentAnimation =
-    "idle";
+  currentState = "hurt";
 
   animationFrame = 0;
-
   animationTimer = 0;
 
-  playerSprite.src =
-    characterSprites.idle[0];
+  setSprite(
+    animations.hurt.frames[0]
+  );
+
+  player.classList.add(
+    "flash"
+  );
+
+  setTimeout(() => {
+
+    player.classList.remove(
+      "flash"
+    );
+
+    if (running) {
+
+      currentState = "idle";
+
+      animationFrame = 0;
+      animationTimer = 0;
+
+      setSprite(
+        animations.idle.frames[0]
+      );
+
+    }
+
+  }, 650);
+
+  updateHUD();
+
+  beep(
+    220,
+    0.12,
+    "sawtooth"
+  );
+
+  if (lives <= 0) {
+
+    endGame();
+
+  }
 
 }
 
-
-}, 650);
-
-updateHUD();
-
-beep(
-220,
-0.12,
-"sawtooth"
-);
-
-if (lives <= 0) {
-
-
-endGame();
-
-
-}
-
-}
 
 // =========================================
 // SMASH ENEMY
 // =========================================
 
-function smashEnemy(obj, index) {
+function smashEnemy(
+  obj,
+  index
+) {
 
-// Remove enemy.
-obj.el.remove();
+  obj.el.remove();
 
-objects.splice(index, 1);
+  objects.splice(
+    index,
+    1
+  );
 
-// Bounce Berry Girl upward.
-playerY =
-Math.max(playerY, 8);
+  playerY =
+    Math.max(
+      playerY,
+      8
+    );
 
-velocityY = 620;
+  velocityY = 620;
 
-jumping = true;
+  jumping = true;
 
-// Add bonus points.
-score += 25;
+  score += 25;
 
-if (score > best) {
+  if (score > best) {
 
+    best = score;
 
-best = score;
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
 
-localStorage.setItem(
-  "berryQuestBest",
-  best
-);
+  }
 
+  currentState = "jump";
+
+  animationFrame = 1;
+  animationTimer = 0;
+
+  setSprite(
+    animations.jump.frames[1]
+  );
+
+  updateHUD();
+
+  beep(
+    980,
+    0.08
+  );
 
 }
 
-// Keep jump animation.
-currentAnimation =
-"jump";
-
-animationFrame = 1;
-
-animationTimer = 0;
-
-playerSprite.src =
-characterSprites.jump[1];
-
-updateHUD();
-
-// Cute smash sound.
-beep(980, 0.08);
-
-}
 
 // =========================================
 // GAME LOOP
@@ -862,547 +864,576 @@ beep(980, 0.08);
 
 function gameLoop(timestamp) {
 
-const dt =
-Math.min(
-(timestamp - lastTime) / 1000 || 0,
-0.033
-);
-
-lastTime = timestamp;
-
-if (running) {
-
-
-hitCooldown =
-  Math.max(
-    0,
-    hitCooldown - dt
-  );
-
-
-// -------------------------------------
-// MOVEMENT
-// -------------------------------------
-
-const movingLeft =
-  keys.ArrowLeft;
-
-const movingRight =
-  keys.ArrowRight;
-
-
-const moving =
-  movingLeft ||
-  movingRight;
-
-
-/* =========================================
-   PLAYER MOVEMENT
-========================================= */
-
-if (movingLeft) {
-
-  playerX -= 45 * dt;
-
-  // Face LEFT
-  playerSprite.style.transform = "scaleX(-1)";
-}
-
-if (movingRight) {
-
-  playerX += 45 * dt;
-
-  // Face RIGHT
-  playerSprite.style.transform = "scaleX(1)";
-}
-
-
-playerX =
-  Math.max(
-    2,
+  const dt =
     Math.min(
-      93,
-      playerX
-    )
-  );
+      (timestamp - lastTime) /
+        1000 || 0,
+      0.033
+    );
+
+  lastTime = timestamp;
+
+  if (running) {
+
+    hitCooldown =
+      Math.max(
+        0,
+        hitCooldown - dt
+      );
 
 
-// -------------------------------------
-// JUMP PHYSICS
-// -------------------------------------
+    // =====================================
+    // MOVEMENT
+    // =====================================
 
-if (jumping) {
+    const movingLeft =
+      keys.ArrowLeft;
 
-  playerY +=
-    velocityY * dt;
+    const movingRight =
+      keys.ArrowRight;
 
-
-  velocityY -=
-    1750 * dt;
-
-
-if (playerY <= 0) {
-
-  playerY = 0;
-
-  velocityY = 0;
-
-  jumping = false;
-
-  // Back to idle after landing
-  currentAnimation = "idle";
-
-  animationFrame = 0;
-
-  animationTimer = 0;
-
-  setSprite(
-    characterSprites.idle[0]
-  );
-}
-
-}
+    const moving =
+      movingLeft ||
+      movingRight;
 
 
-// -------------------------------------
-// CHARACTER ANIMATION
-// -------------------------------------
+    // =====================================
+    // PLAYER HORIZONTAL MOVEMENT
+    // =====================================
 
-updateAnimation(dt);
+    if (movingLeft) {
 
+      playerX -=
+        45 * dt;
 
-// -------------------------------------
-// SPAWN TIMERS
-// -------------------------------------
-
-spawnTimer += dt;
-
-enemyTimer += dt;
-
-
-const berryRate =
-  Math.max(
-    0.65,
-    1.15 - score / 1800
-  );
-
-
-const enemyRate =
-  Math.max(
-    0.85,
-    1.8 - score / 1200
-  );
-
-
-if (
-  spawnTimer >=
-  berryRate
-) {
-
-  spawnBerry();
-
-  spawnTimer = 0;
-
-}
-
-
-if (
-  enemyTimer >=
-  enemyRate
-) {
-
-  spawnEnemy();
-
-  enemyTimer = 0;
-
-}
-
-
-// -------------------------------------
-// COLLISIONS
-// -------------------------------------
-
-const pRect =
-  playerRect();
-
-
-const gameRect =
-  game.getBoundingClientRect();
-
-
-// Work backwards so objects can safely
-// be removed while looping.
-for (
-  let index = objects.length - 1;
-  index >= 0;
-  index--
-) {
-
-  const obj =
-    objects[index];
-
-
-  /* =========================================
-       ENEMY
-========================================= */
-  if (
-    obj.type === "enemy"
-  ) {
-
-    // Move enemy.
-    obj.x +=
-      obj.direction *
-      obj.speed *
-      dt;
-
-
-    obj.el.style.left =
-      `${obj.x}%`;
-
-
-    // Keep flying enemies at their height.
-    if (
-      obj.baseY >
-      GROUND_HEIGHT() + 40
-    ) {
-
-      obj.el.style.bottom =
-        `${obj.baseY}px`;
+      playerSprite.style.transform =
+        "scaleX(-1)";
 
     }
 
 
-    const rect =
-      obj.el.getBoundingClientRect();
+    if (movingRight) {
 
+      playerX +=
+        45 * dt;
 
-    // ---------------------------------
-    // JUMP ON ENEMY
-    // ---------------------------------
-
-    const playerIsFalling =
-      velocityY <= 0;
-
-
-    const playerAboveEnemy =
-      pRect.bottom <=
-      rect.top + 18;
-
-
-    if (
-      rectsOverlap(
-        pRect,
-        rect
-      ) &&
-      jumping &&
-      playerIsFalling &&
-      playerAboveEnemy
-    ) {
-
-      smashEnemy(
-        obj,
-        index
-      );
-
-      continue;
+      playerSprite.style.transform =
+        "scaleX(1)";
 
     }
 
 
-    // ---------------------------------
-    // NORMAL ENEMY HIT
-    // ---------------------------------
-
-    if (
-      rectsOverlap(
-        pRect,
-        rect
-      )
-    ) {
-
-      obj.el.remove();
-
-      objects.splice(
-        index,
-        1
+    playerX =
+      Math.max(
+        2,
+        Math.min(
+          93,
+          playerX
+        )
       );
 
 
-      hurt();
+    // =====================================
+    // JUMP PHYSICS
+    // =====================================
 
-      continue;
+    if (jumping) {
+
+      playerY +=
+        velocityY * dt;
+
+      velocityY -=
+        1750 * dt;
+
+
+      // -----------------------------------
+      // LANDING
+      // -----------------------------------
+
+      if (playerY <= 0) {
+
+        playerY = 0;
+
+        velocityY = 0;
+
+        jumping = false;
+
+        currentState = "idle";
+
+        animationFrame = 0;
+        animationTimer = 0;
+
+        setSprite(
+          animations.idle.frames[0]
+        );
+
+      }
 
     }
 
 
-    // ---------------------------------
-    // ENEMY REACHES WALL
-    // ---------------------------------
+    // =====================================
+    // CHOOSE CHARACTER ANIMATION
+    // =====================================
 
-    const outside =
-      rect.right <
-        gameRect.left - 10 ||
-      rect.left >
-        gameRect.right + 10;
+    if (!jumping) {
+
+      if (moving) {
+
+        setPlayerState("run");
+
+      } else {
+
+        setPlayerState("idle");
+
+      }
+
+    }
 
 
-    if (outside) {
+    // =====================================
+    // UPDATE ANIMATION
+    // =====================================
 
-      obj.el.remove();
+    updateAnimation(dt);
 
-      objects.splice(
-        index,
-        1
+
+    // =====================================
+    // SPAWN TIMERS
+    // =====================================
+
+    spawnTimer += dt;
+
+    enemyTimer += dt;
+
+
+    const berryRate =
+      Math.max(
+        0.65,
+        1.15 - score / 1800
       );
+
+
+    const enemyRate =
+      Math.max(
+        0.85,
+        1.8 - score / 1200
+      );
+
+
+    if (
+      spawnTimer >=
+      berryRate
+    ) {
+
+      spawnBerry();
+
+      spawnTimer = 0;
+
+    }
+
+
+    if (
+      enemyTimer >=
+      enemyRate
+    ) {
+
+      spawnEnemy();
+
+      enemyTimer = 0;
+
+    }
+
+
+    // =====================================
+    // COLLISIONS
+    // =====================================
+
+    const pRect =
+      playerRect();
+
+    const gameRect =
+      game.getBoundingClientRect();
+
+
+    for (
+      let index =
+        objects.length - 1;
+
+      index >= 0;
+
+      index--
+    ) {
+
+      const obj =
+        objects[index];
+
+
+      // ===================================
+      // ENEMY
+      // ===================================
+
+      if (
+        obj.type === "enemy"
+      ) {
+
+        obj.x +=
+          obj.direction *
+          obj.speed *
+          dt;
+
+        obj.el.style.left =
+          `${obj.x}%`;
+
+
+        if (
+          obj.baseY >
+          GROUND_HEIGHT() + 40
+        ) {
+
+          obj.el.style.bottom =
+            `${obj.baseY}px`;
+
+        }
+
+
+        const rect =
+          obj.el.getBoundingClientRect();
+
+
+        // ---------------------------------
+        // SMASH ENEMY
+        // ---------------------------------
+
+        const playerIsFalling =
+          velocityY <= 0;
+
+        const playerAboveEnemy =
+          pRect.bottom <=
+          rect.top + 18;
+
+
+        if (
+          rectsOverlap(
+            pRect,
+            rect
+          ) &&
+          jumping &&
+          playerIsFalling &&
+          playerAboveEnemy
+        ) {
+
+          smashEnemy(
+            obj,
+            index
+          );
+
+          continue;
+
+        }
+
+
+        // ---------------------------------
+        // NORMAL HIT
+        // ---------------------------------
+
+        if (
+          rectsOverlap(
+            pRect,
+            rect
+          )
+        ) {
+
+          obj.el.remove();
+
+          objects.splice(
+            index,
+            1
+          );
+
+          hurt();
+
+          continue;
+
+        }
+
+
+        // ---------------------------------
+        // ENEMY OUTSIDE
+        // ---------------------------------
+
+        const outside =
+          rect.right <
+            gameRect.left - 10 ||
+          rect.left >
+            gameRect.right + 10;
+
+
+        if (outside) {
+
+          obj.el.remove();
+
+          objects.splice(
+            index,
+            1
+          );
+
+        }
+
+      }
+
+
+      // ===================================
+      // STRAWBERRY
+      // ===================================
+
+      else {
+
+        const rect =
+          obj.el.getBoundingClientRect();
+
+
+        if (
+          rectsOverlap(
+            pRect,
+            rect
+          )
+        ) {
+
+          collectObject(
+            obj,
+            index
+          );
+
+          continue;
+
+        }
+
+
+        if (
+          rect.right <
+          gameRect.left - 50
+        ) {
+
+          obj.el.remove();
+
+          objects.splice(
+            index,
+            1
+          );
+
+        }
+
+      }
 
     }
 
   }
 
 
-  // ===================================
-  // STRAWBERRY
-  // ===================================
+  setPlayerPosition();
 
-  else {
-
-    const rect =
-      obj.el.getBoundingClientRect();
-
-
-    if (
-      rectsOverlap(
-        pRect,
-        rect
-      )
-    ) {
-
-      collectObject(
-        obj,
-        index
-      );
-
-      continue;
-
-    }
-
-
-    if (
-      rect.right <
-      gameRect.left - 50
-    ) {
-
-      obj.el.remove();
-
-      objects.splice(
-        index,
-        1
-      );
-
-    }
-
-  }
+  requestAnimationFrame(
+    gameLoop
+  );
 
 }
 
-
-}
-
-requestAnimationFrame(
-gameLoop
-);
-
-}
 
 // =========================================
 // KEYBOARD CONTROLS
 // =========================================
 
 window.addEventListener(
-"keydown",
-e => {
+  "keydown",
+  e => {
+
+    if (
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "Space"
+      ].includes(e.code) ||
+      [
+        "ArrowLeft",
+        "ArrowRight"
+      ].includes(e.key)
+    ) {
+
+      e.preventDefault();
+
+    }
 
 
-if (
-  [
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowUp",
-    "Space"
-  ].includes(e.code) ||
-  [
-    "ArrowLeft",
-    "ArrowRight"
-  ].includes(e.key)
-) {
+    keys[e.key] = true;
 
-  e.preventDefault();
-
-}
+    keys[e.code] = true;
 
 
-keys[e.key] = true;
+    if (
+      e.key === "ArrowUp" ||
+      e.code === "Space"
+    ) {
 
-keys[e.code] = true;
+      jump();
 
-
-if (
-  e.key === "ArrowUp" ||
-  e.code === "Space"
-) {
-
-  jump();
-
-}
+    }
 
 
-if (
-  e.key === "Enter" &&
-  !running
-) {
+    if (
+      e.key === "Enter" &&
+      !running
+    ) {
 
-  startGame();
+      startGame();
 
-}
+    }
 
-
-}
+  }
 );
+
 
 // =========================================
 // KEY RELEASE
 // =========================================
 
 window.addEventListener(
-"keyup",
-e => {
+  "keyup",
+  e => {
 
+    keys[e.key] = false;
 
-keys[e.key] = false;
+    keys[e.code] = false;
 
-keys[e.code] = false;
-
-
-}
+  }
 );
+
 
 // =========================================
 // MOBILE CONTROLS
 // =========================================
 
 document
-.querySelectorAll(
-".mobile-controls button"
-)
-.forEach(btn => {
+  .querySelectorAll(
+    ".mobile-controls button"
+  )
+  .forEach(btn => {
+
+    const key =
+      btn.dataset.key;
 
 
-const key =
-  btn.dataset.key;
+    const press = e => {
+
+      e.preventDefault();
+
+      keys[key] = true;
 
 
-const press = e => {
+      if (
+        key === "Space"
+      ) {
 
-  e.preventDefault();
+        jump();
 
-  keys[key] = true;
+      }
 
-
-  if (
-    key === "Space"
-  ) {
-
-    jump();
-
-  }
-
-};
+    };
 
 
-const release = e => {
+    const release = e => {
 
-  e.preventDefault();
+      e.preventDefault();
 
-  keys[key] = false;
+      keys[key] = false;
 
-};
-
-
-btn.addEventListener(
-  "pointerdown",
-  press
-);
+    };
 
 
-btn.addEventListener(
-  "pointerup",
-  release
-);
+    btn.addEventListener(
+      "pointerdown",
+      press
+    );
 
+    btn.addEventListener(
+      "pointerup",
+      release
+    );
 
-btn.addEventListener(
-  "pointerleave",
-  release
-);
+    btn.addEventListener(
+      "pointerleave",
+      release
+    );
 
+  });
 
-});
 
 // =========================================
 // START BUTTON
 // =========================================
 
 startBtn.addEventListener(
-"click",
-startGame
+  "click",
+  startGame
 );
+
 
 // =========================================
 // SOUND BUTTON
 // =========================================
 
 soundBtn.addEventListener(
-"click",
-() => {
+  "click",
+  () => {
+
+    soundEnabled =
+      !soundEnabled;
+
+    soundBtn.textContent =
+      soundEnabled
+        ? "🔊"
+        : "🔇";
 
 
-soundEnabled =
-  !soundEnabled;
+    if (soundEnabled) {
 
+      beep(
+        700,
+        0.06
+      );
 
-soundBtn.textContent =
-  soundEnabled
-    ? "🔊"
-    : "🔇";
+    }
 
-
-if (soundEnabled) {
-
-  beep(700, 0.06);
-
-}
-
-}
+  }
 );
+
 
 // =========================================
 // WINDOW RESIZE
 // =========================================
 
 window.addEventListener(
-"resize",
-setPlayerPosition
+  "resize",
+  setPlayerPosition
 );
 
+
 // =========================================
-// INITIALIZE GAME
+// INITIALIZE
 // =========================================
 
+currentState = "idle";
+
+animationFrame = 0;
+
+animationTimer = 0;
+
 playerSprite.src =
-characterSprites.idle[0];
+  animations.idle.frames[0];
 
 setPlayerPosition();
 
 requestAnimationFrame(
-gameLoop
+  gameLoop
 );
