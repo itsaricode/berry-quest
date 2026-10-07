@@ -392,16 +392,11 @@ enemyTimer = 0;
 
 running = true;
 
-currentAnimation = "idle";
-
+currentState = "idle";
 animationFrame = 0;
-
 animationTimer = 0;
 
-playerSprite.style.transform = "scaleX(1)";
-
-playerSprite.src =
-characterSprites.idle[0];
+setPlayerState("idle");
 
 message.classList.add("hidden");
 
