@@ -126,7 +126,9 @@ function setSprite(src) {
   }
 
 }
-
+function testRunSprite() {
+  playerSprite.src = "assets/character/run-1.png";
+}
 
 // =========================================
 // CHANGE PLAYER STATE
@@ -1510,6 +1512,8 @@ function gameLoop(timestamp) {
   requestAnimationFrame(
     gameLoop
   );
+
+testRunSprite();
 
 }
 
