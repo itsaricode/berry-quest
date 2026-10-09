@@ -35,6 +35,7 @@ let spawnTimer = 0;
 let enemyTimer = 0;
 
 let hitCooldown = 0;
+let stateLockTimer = 0;
 
 let soundEnabled = true;
 let audioCtx = null;
