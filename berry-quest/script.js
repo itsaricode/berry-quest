@@ -502,6 +502,7 @@ function playHappyAnimation() {
 }
 
 
+
 // =========================================
 // JUMP
 // =========================================
@@ -516,19 +517,9 @@ function jump() {
 
   velocityY = 700;
 
-  animationFrame = 0;
-  animationTimer = 0;
+  setPlayerState("jump");
 
-  currentState = "jump";
-
-  setSprite(
-    animations.jump.frames[0]
-  );
-
-  beep(
-    850,
-    0.06
-  );
+  beep(850, 0.06);
 
 }
 
@@ -949,34 +940,46 @@ if (jumping) {
 }
 
 
-    // =====================================
-    // CHOOSE CHARACTER ANIMATION
-    // =====================================
 
+// =====================================
+// CHOOSE CHARACTER ANIMATION
+// =====================================
+
+// Update hurt protection timer
 if (stateLockTimer > 0) {
+
   stateLockTimer = Math.max(
     0,
     stateLockTimer - dt
   );
+
 }
 
+// Don't interrupt the hurt animation
 if (stateLockTimer <= 0) {
 
   if (jumping) {
 
+    // Keep the jump animation while airborne.
+    // Horizontal movement continues independently.
     setPlayerState("jump");
 
   } else if (moving) {
 
+    // Running after landing, or while on the ground
     setPlayerState("run");
 
   } else {
 
+    // No movement and on the ground
     setPlayerState("idle");
 
   }
 
 }
+
+// Update the selected animation
+updateAnimation(dt);
 
 
 
