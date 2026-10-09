@@ -1,22 +1,3 @@
-/* =========================================================
-   BERRY QUEST 🍓
-   SIMPLE CHARACTER SYSTEM
-
-   Character:
-   IDLE  → idle-1 + idle-2
-   MOVE  → same idle sprites + flip
-   JUMP  → jump-1 + jump-2
-   HURT  → hurt.png
-   HAPPY → happy-1 + happy-2
-
-   RUN SPRITES ARE NOT USED FOR NOW.
-========================================================= */
-
-
-/* =========================================================
-   DOM ELEMENTS
-========================================================= */
-
 const game = document.getElementById("game");
 const player = document.getElementById("player");
 const playerSprite = document.getElementById("playerSprite");
@@ -29,42 +10,13 @@ const message = document.getElementById("message");
 const startBtn = document.getElementById("startBtn");
 const soundBtn = document.getElementById("soundBtn");
 
-
-/* =========================================================
-   CHARACTER SPRITES
-========================================================= */
-
-const sprites = {
-
-    idle: [
-        "assets/character/idle-1.png",
-        "assets/character/idle-2.png"
-    ],
-
-    jump: [
-        "assets/character/jump-1.png",
-        "assets/character/jump-2.png"
-    ],
-
-    hurt: "assets/character/hurt.png",
-
-    happy: [
-        "assets/character/happy-1.png",
-        "assets/character/happy-2.png"
-    ]
-};
-
-
-/* =========================================================
-   GAME VARIABLES
-========================================================= */
+// =========================================
+// GAME VARIABLES
+// =========================================
 
 let score = 0;
 let lives = 3;
-
-let best = Number(
-    localStorage.getItem("berryQuestBest") || 0
-);
+let best = Number(localStorage.getItem("berryQuestBest") || 0);
 
 let running = false;
 
@@ -72,11 +24,9 @@ let playerX = 8;
 let playerY = 0;
 
 let velocityY = 0;
-
 let jumping = false;
 
 let keys = {};
-
 let objects = [];
 
 let lastTime = 0;
@@ -87,1569 +37,1403 @@ let enemyTimer = 0;
 let hitCooldown = 0;
 
 let soundEnabled = true;
-
 let audioCtx = null;
 
 
-/* =========================================================
-   CHARACTER ANIMATION VARIABLES
-========================================================= */
+// =========================================
+// CHARACTER ANIMATIONS
+// =========================================
 
-let idleFrame = 0;
-let idleTimer = 0;
+const animations = {
+
+  idle: {
+    frames: [
+      "assets/character/idle-1.png",
+      "assets/character/idle-2.png"
+    ],
+    frameDuration: 0.45,
+    loop: true
+  },
+
+  run: {
+    frames: [
+      "assets/character/run-1.png",
+      "assets/character/run-2.png",
+      "assets/character/run-3.png",
+      "assets/character/run-4.png"
+    ],
+    frameDuration: 0.09,
+    loop: true
+  },
+
+  jump: {
+    frames: [
+      "assets/character/jump-1.png",
+      "assets/character/jump-2.png"
+    ],
+    frameDuration: 0.12,
+    loop: false
+  },
+
+  hurt: {
+    frames: [
+      "assets/character/hurt.png"
+    ],
+    frameDuration: 0.3,
+    loop: false
+  },
+
+  happy: {
+    frames: [
+      "assets/character/happy-1.png",
+      "assets/character/happy-2.png"
+    ],
+    frameDuration: 0.18,
+    loop: true
+  }
+
+};
 
 
-/* HAPPY ANIMATION */
+// =========================================
+// ANIMATION STATE
+// =========================================
 
-let happyActive = false;
-let happyFrame = 0;
-let happyTimer = 0;
-
-
-/* HURT ANIMATION */
-
-let hurtActive = false;
-let hurtTimer = 0;
+let currentState = "idle";
+let animationFrame = 0;
+let animationTimer = 0;
 
 
-/* HIGH SCORE */
+// =========================================
+// SET SPRITE
+// =========================================
 
-let newBestThisRun = false;
-let happyShownThisRun = false;
+function setSprite(src) {
 
+  if (playerSprite.getAttribute("src") !== src) {
+    playerSprite.src = src;
+  }
 
-/* =========================================================
-   CONSTANTS
-========================================================= */
-
-const GRAVITY = 1200;
-const JUMP_POWER = 520;
-
-const PLAYER_SPEED = 45;
-
-const HAPPY_FRAME_TIME = 0.18;
-const IDLE_FRAME_TIME = 0.45;
-const HURT_DURATION = 0.65;
-
-
-/* =========================================================
-   BASIC SPRITE FUNCTION
-=========================================================
-
-   Ye function sirf sprite change karta hai.
-
-   Agar hum kahen:
-
-   setCharacterSprite("assets/character/hurt.png");
-
-   to character hurt image dikhaegi.
-========================================================= */
-
-function setCharacterSprite(src) {
-
-    if (playerSprite.getAttribute("src") !== src) {
-        playerSprite.setAttribute("src", src);
-    }
 }
 
 
-/* =========================================================
-   IDLE ANIMATION
-=========================================================
+// =========================================
+// CHANGE PLAYER STATE
+// =========================================
 
-   Standing character:
+function setPlayerState(newState) {
 
-   idle-1
-      ↓
-   idle-2
-      ↓
-   idle-1
-      ↓
-   idle-2
-========================================================= */
+  if (!animations[newState]) return;
 
-function updateIdleAnimation(dt) {
+  // Don't restart the same animation every frame.
+  if (currentState === newState) return;
 
-    idleTimer += dt;
+  currentState = newState;
 
-    if (idleTimer >= IDLE_FRAME_TIME) {
+  animationFrame = 0;
+  animationTimer = 0;
 
-        idleTimer = 0;
+  setSprite(
+    animations[newState].frames[0]
+  );
 
-        idleFrame++;
-
-        if (idleFrame >= sprites.idle.length) {
-            idleFrame = 0;
-        }
-
-        setCharacterSprite(
-            sprites.idle[idleFrame]
-        );
-    }
 }
 
 
-/* =========================================================
-   JUMP SPRITE
-=========================================================
+// =========================================
+// ANIMATION ENGINE
+// =========================================
 
-   Going UP:
-       jump-1
+function updateAnimation(dt) {
 
-   Coming DOWN:
-       jump-2
-========================================================= */
+  const animation = animations[currentState];
 
-function updateJumpSprite() {
+  if (!animation) return;
 
-    if (velocityY > 0) {
+  animationTimer += dt;
 
-        setCharacterSprite(
-            sprites.jump[0]
-        );
+  if (
+    animationTimer >=
+    animation.frameDuration
+  ) {
 
-    } else {
+    animationTimer -=
+      animation.frameDuration;
 
-        setCharacterSprite(
-            sprites.jump[1]
-        );
-    }
-}
+    animationFrame++;
 
+    // LOOP
+    if (animation.loop) {
 
-/* =========================================================
-   HAPPY ANIMATION
-=========================================================
+      if (
+        animationFrame >=
+        animation.frames.length
+      ) {
 
-   Ye GAMEOVER ke liye nahi hai.
+        animationFrame = 0;
 
-   Ye gameplay ke DURING chalegi.
+      }
 
-   happy-1
-      ↓
-   happy-2
-      ↓
-   normal gameplay
-========================================================= */
-
-function triggerHappy() {
-
-    /*
-       Agar already happy animation chal rahi hai
-       to dobara restart nahi karni.
-    */
-
-    if (happyActive || hurtActive) {
-        return;
     }
 
-    happyActive = true;
+    // ONE TIME
+    else {
 
-    happyFrame = 0;
+      if (
+        animationFrame >=
+        animation.frames.length
+      ) {
 
-    happyTimer = 0;
+        animationFrame =
+          animation.frames.length - 1;
 
-    setCharacterSprite(
-        sprites.happy[0]
-    );
-}
+      }
 
-
-/* =========================================================
-   UPDATE HAPPY ANIMATION
-========================================================= */
-
-function updateHappy(dt) {
-
-    if (!happyActive) {
-        return;
     }
 
-    happyTimer += dt;
-
-    if (happyTimer >= HAPPY_FRAME_TIME) {
-
-        happyTimer = 0;
-
-        happyFrame++;
-
-        /*
-           Happy animation complete
-        */
-
-        if (happyFrame >= sprites.happy.length) {
-
-            happyActive = false;
-
-            happyFrame = 0;
-
-            restoreNormalSprite();
-
-            return;
-        }
-
-        setCharacterSprite(
-            sprites.happy[happyFrame]
-        );
-    }
-}
-
-
-/* =========================================================
-   RESTORE NORMAL CHARACTER
-=========================================================
-
-   Happy ya hurt ke baad:
-
-   Agar jumping hai:
-       jump sprite
-
-   Agar ground par hai:
-       idle sprite
-========================================================= */
-
-function restoreNormalSprite() {
-
-    idleFrame = 0;
-    idleTimer = 0;
-
-    if (jumping) {
-
-        updateJumpSprite();
-
-    } else {
-
-        setCharacterSprite(
-            sprites.idle[0]
-        );
-    }
-}
-
-
-/* =========================================================
-   HURT
-========================================================= */
-
-function triggerHurt() {
-
-    /*
-       Agar already hit cooldown mein hai
-       to dobara hit nahi hoga.
-    */
-
-    if (hitCooldown > 0) {
-        return;
-    }
-
-    lives--;
-
-    livesEl.textContent = lives;
-
-    hitCooldown = 1.2;
-
-    hurtActive = true;
-
-    hurtTimer = 0;
-
-    /*
-       Agar happy animation chal rahi ho
-       to hurt usko cancel karega.
-    */
-
-    happyActive = false;
-
-    setCharacterSprite(
-        sprites.hurt
+    setSprite(
+      animation.frames[animationFrame]
     );
 
-    /*
-       Small visual flash
-    */
+  }
 
-    player.classList.add("hurt");
-
-    playSound(180, 0.12);
-
-    if (lives <= 0) {
-
-        endGame();
-
-    }
 }
 
 
-/* =========================================================
-   UPDATE HURT
-========================================================= */
+// =========================================
+// INITIAL HUD
+// =========================================
 
-function updateHurt(dt) {
+bestEl.textContent = best;
 
-    if (!hurtActive) {
-        return;
-    }
 
-    hurtTimer += dt;
+// =========================================
+// GAME SIZE
+// =========================================
 
-    if (hurtTimer >= HURT_DURATION) {
+const GAME_HEIGHT = () =>
+  game.clientHeight;
 
-        hurtActive = false;
+const GROUND_HEIGHT = () =>
+  game.clientHeight * 0.28;
 
-        hurtTimer = 0;
 
-        player.classList.remove("hurt");
+// =========================================
+// SOUND
+// =========================================
 
-        restoreNormalSprite();
-    }
+function beep(
+  freq = 600,
+  duration = 0.07,
+  type = "square"
+) {
+
+  if (!soundEnabled) return;
+
+  try {
+
+    audioCtx ??= new (
+      window.AudioContext ||
+      window.webkitAudioContext
+    )();
+
+    const osc =
+      audioCtx.createOscillator();
+
+    const gain =
+      audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.value = freq;
+
+    gain.gain.value = 0.035;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+
+    osc.stop(
+      audioCtx.currentTime +
+      duration
+    );
+
+  } catch {}
+
 }
 
 
-/* =========================================================
-   PLAYER POSITION
-========================================================= */
-
-function GROUND_HEIGHT() {
-
-    return game.clientHeight * 0.28;
-}
-
-
-function setPlayerPosition() {
-
-    player.style.left = playerX + "%";
-
-    player.style.bottom =
-        (GROUND_HEIGHT() + playerY) + "px";
-}
-
-
-/* =========================================================
-   JUMP
-========================================================= */
-
-function jump() {
-
-    if (!running) {
-        return;
-    }
-
-    /*
-       Double jump prevent
-    */
-
-    if (jumping) {
-        return;
-    }
-
-    jumping = true;
-
-    velocityY = JUMP_POWER;
-
-    updateJumpSprite();
-
-    playSound(420, 0.08);
-}
-
-
-/* =========================================================
-   SCORE
-=========================================================
-
-   IMPORTANT:
-
-   Score yahan increase hota hai.
-
-   Agar new BEST bana:
-
-       best update
-       localStorage update
-       happy reaction
-========================================================= */
-
-function addScore(points) {
-
-    score += points;
-
-    scoreEl.textContent = score;
-
-
-    /*
-       NEW BEST
-    */
-
-    if (score > best) {
-
-        best = score;
-
-        newBestThisRun = true;
-
-        localStorage.setItem(
-            "berryQuestBest",
-            best
-        );
-
-        bestEl.textContent = best;
-
-
-        /*
-           Happy reaction tab show hogi
-           jab score kam az kam 50 ho.
-
-           Is se first berry par
-           character immediately happy nahi hogi.
-        */
-
-        if (
-            !happyShownThisRun &&
-            score >= 50
-        ) {
-
-            happyShownThisRun = true;
-
-            triggerHappy();
-        }
-    }
-}
-
-
-/* =========================================================
-   UPDATE HUD
-========================================================= */
+// =========================================
+// HUD
+// =========================================
 
 function updateHUD() {
 
-    scoreEl.textContent = score;
+  scoreEl.textContent = score;
 
-    bestEl.textContent = best;
+  bestEl.textContent = best;
 
-    livesEl.textContent = lives;
+  livesEl.textContent = lives;
+
 }
 
 
-/* =========================================================
-   SPAWN BERRY
-========================================================= */
+// =========================================
+// CHARACTER POSITION
+// =========================================
+
+function setPlayerPosition() {
+
+  const ground =
+    GROUND_HEIGHT();
+
+  const bottom =
+    ground + playerY;
+
+  player.style.left =
+    `${playerX}%`;
+
+  player.style.bottom =
+    `${bottom}px`;
+
+}
+
+
+// =========================================
+// RESET PLAYER
+// =========================================
+
+function resetPlayer() {
+
+  playerX = 8;
+
+  playerY = 0;
+
+  velocityY = 0;
+
+  jumping = false;
+
+  currentState = "idle";
+
+  animationFrame = 0;
+
+  animationTimer = 0;
+
+  playerSprite.style.transform =
+    "scaleX(1)";
+
+  setSprite(
+    animations.idle.frames[0]
+  );
+
+  setPlayerPosition();
+
+}
+
+
+// =========================================
+// START GAME
+// =========================================
+
+function startGame() {
+
+  objects.forEach(object => {
+
+    object.el.remove();
+
+  });
+
+  objects = [];
+
+  score = 0;
+
+  lives = 3;
+
+  playerX = 8;
+
+  playerY = 0;
+
+  velocityY = 0;
+
+  jumping = false;
+
+  hitCooldown = 0;
+
+  spawnTimer = 0;
+
+  enemyTimer = 0;
+
+  running = true;
+
+  currentState = "idle";
+
+  animationFrame = 0;
+
+  animationTimer = 0;
+
+  playerSprite.style.transform =
+    "scaleX(1)";
+
+  setSprite(
+    animations.idle.frames[0]
+  );
+
+  message.classList.add("hidden");
+
+  updateHUD();
+
+  setPlayerPosition();
+
+  beep(700, 0.08);
+
+}
+
+
+// =========================================
+// GAME OVER
+// =========================================
+
+function endGame() {
+
+  running = false;
+
+  if (score > best) {
+
+    best = score;
+
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
+
+  }
+
+  updateHUD();
+
+  if (score > 0 && score >= best) {
+
+    playHappyAnimation();
+
+  }
+
+  message.querySelector("h2").textContent =
+    "Game Over 💗";
+
+  message.querySelector(".big-icon").textContent =
+    score >= best && score > 0
+      ? "🏆"
+      : "🍓";
+
+  message.querySelector(
+    ".message-box p"
+  ).innerHTML =
+    `You collected <strong>${score}</strong> points!<br>
+     Best score: <strong>${best}</strong>`;
+
+  startBtn.textContent =
+    "PLAY AGAIN ✨";
+
+  message.classList.remove("hidden");
+
+  beep(
+    180,
+    0.2,
+    "sawtooth"
+  );
+
+}
+
+
+// =========================================
+// HAPPY ANIMATION
+// =========================================
+
+function playHappyAnimation() {
+
+  currentState = "happy";
+
+  animationFrame = 0;
+  animationTimer = 0;
+
+  setSprite(
+    animations.happy.frames[0]
+  );
+
+  const happyTimer =
+    setInterval(() => {
+
+      animationFrame++;
+
+      if (
+        animationFrame >=
+        animations.happy.frames.length
+      ) {
+
+        animationFrame = 0;
+
+      }
+
+      setSprite(
+        animations.happy.frames[
+          animationFrame
+        ]
+      );
+
+    }, 180);
+
+  setTimeout(() => {
+
+    clearInterval(happyTimer);
+
+    currentState = "idle";
+
+    animationFrame = 0;
+    animationTimer = 0;
+
+    setSprite(
+      animations.idle.frames[0]
+    );
+
+  }, 1800);
+
+}
+
+
+// =========================================
+// JUMP
+// =========================================
+
+function jump() {
+
+  if (!running) return;
+
+  if (jumping) return;
+
+  jumping = true;
+
+  velocityY = 700;
+
+  animationFrame = 0;
+  animationTimer = 0;
+
+  currentState = "jump";
+
+  setSprite(
+    animations.jump.frames[0]
+  );
+
+  beep(
+    850,
+    0.06
+  );
+
+}
+
+
+// =========================================
+// SPAWN STRAWBERRY
+// =========================================
 
 function spawnBerry() {
 
-    const berry = document.createElement("div");
+  const el =
+    document.createElement("div");
 
-    berry.className = "game-object berry";
+  const golden =
+    Math.random() < 0.12;
 
-    berry.textContent = "🍓";
+  el.className =
+    golden
+      ? "golden-berry"
+      : "berry";
 
-    berry.style.left =
-        (Math.random() * 88 + 5) + "%";
+  el.textContent =
+    golden
+      ? "✨🍓"
+      : "🍓";
 
-    berry.style.bottom =
-        (GROUND_HEIGHT() + 5) + "px";
+  const x =
+    18 + Math.random() * 72;
 
-    game.appendChild(berry);
+  const y =
+    35 + Math.random() * 38;
 
-    objects.push({
+  el.style.left =
+    `${x}%`;
 
-        element: berry,
+  el.style.bottom =
+    `${GROUND_HEIGHT() + y}px`;
 
-        type: "berry",
+  game.appendChild(el);
 
-        x: parseFloat(berry.style.left),
+  objects.push({
 
-        y: 0,
+    type:
+      golden
+        ? "golden"
+        : "berry",
 
-        width: 5,
+    el,
 
-        height: 8
+    x,
 
-    });
+    y:
+      GROUND_HEIGHT() + y,
+
+    w: 38,
+
+    h: 38
+
+  });
+
 }
 
 
-/* =========================================================
-   SPAWN GOLDEN BERRY
-========================================================= */
-
-function spawnGoldenBerry() {
-
-    const berry = document.createElement("div");
-
-    berry.className =
-        "game-object golden-berry";
-
-    berry.textContent = "⭐";
-
-    berry.style.left =
-        (Math.random() * 88 + 5) + "%";
-
-    berry.style.bottom =
-        (GROUND_HEIGHT() + 5) + "px";
-
-    game.appendChild(berry);
-
-    objects.push({
-
-        element: berry,
-
-        type: "golden",
-
-        x: parseFloat(berry.style.left),
-
-        y: 0,
-
-        width: 5,
-
-        height: 8
-
-    });
-}
-
-
-/* =========================================================
-   SPAWN ENEMY
-========================================================= */
+// =========================================
+// SPAWN ENEMY
+// =========================================
 
 function spawnEnemy() {
 
-    const enemy = document.createElement("div");
+  const el =
+    document.createElement("div");
 
-    enemy.className =
-        "game-object enemy";
+  const bee =
+    Math.random() < 0.35;
 
-    const isBee =
-        Math.random() < 0.5;
+  el.className =
+    `enemy ${bee ? "bee" : "snail"}`;
 
-    enemy.textContent =
-        isBee ? "🐝" : "🐌";
+  el.textContent =
+    bee
+      ? "🐝"
+      : "🐌";
 
-    const startX =
-        Math.random() < 0.5
-            ? 2
-            : 92;
+  const x =
+    Math.random() > 0.5
+      ? -5
+      : 101;
 
-    enemy.style.left =
-        startX + "%";
+  const y =
+    bee
+      ? 85 + Math.random() * 80
+      : 0;
 
-    enemy.style.bottom =
-        (GROUND_HEIGHT() + 2) + "px";
+  el.style.left =
+    `${x}%`;
 
-    game.appendChild(enemy);
+  el.style.bottom =
+    `${GROUND_HEIGHT() + y}px`;
 
-    objects.push({
+  game.appendChild(el);
 
-        element: enemy,
+  objects.push({
 
-        type: "enemy",
+    type: "enemy",
 
-        enemyType: isBee ? "bee" : "snail",
+    el,
 
-        x: startX,
+    x,
 
-        y: 0,
+    y:
+      GROUND_HEIGHT() + y,
 
-        width: 6,
+    w: 46,
 
-        height: 8,
+    h: 46,
 
-        direction:
-            startX < 50 ? 1 : -1
+    speed:
+      (bee ? 18 : 10) +
+      Math.random() * 12,
 
-    });
+    direction:
+      x < 0
+        ? 1
+        : -1,
+
+    baseY:
+      GROUND_HEIGHT() + y
+
+  });
+
 }
 
 
-/* =========================================================
-   COLLISION
-========================================================= */
+// =========================================
+// COLLISION
+// =========================================
 
-function isColliding(obj) {
+function rectsOverlap(a, b) {
 
-    const playerLeft = playerX;
+  return !(
+    a.right < b.left ||
+    a.left > b.right ||
+    a.bottom < b.top ||
+    a.top > b.bottom
+  );
 
-    const playerRight =
-        playerX + 7;
-
-    const objectLeft =
-        obj.x;
-
-    const objectRight =
-        obj.x + obj.width;
+}
 
 
-    return (
-        playerRight > objectLeft &&
-        playerLeft < objectRight
+function playerRect() {
+
+  return player.getBoundingClientRect();
+
+}
+
+
+// =========================================
+// COLLECT STRAWBERRY
+// =========================================
+
+function collectObject(
+  obj,
+  index
+) {
+
+  obj.el.remove();
+
+  objects.splice(
+    index,
+    1
+  );
+
+  if (
+    obj.type === "golden"
+  ) {
+
+    score += 50;
+
+    beep(
+      1100,
+      0.12
     );
+
+  } else {
+
+    score += 10;
+
+    beep(
+      760,
+      0.06
+    );
+
+  }
+
+  if (score > best) {
+
+    best = score;
+
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
+
+  }
+
+  updateHUD();
+
 }
 
 
-/* =========================================================
-   COLLECT OBJECT
-========================================================= */
+// =========================================
+// PLAYER HURT
+// =========================================
 
-function collectObject(obj, index) {
+function hurt() {
 
-    if (!isColliding(obj)) {
-        return;
+  if (hitCooldown > 0)
+    return;
+
+  lives--;
+
+  hitCooldown = 1.2;
+
+  currentState = "hurt";
+
+  animationFrame = 0;
+  animationTimer = 0;
+
+  setSprite(
+    animations.hurt.frames[0]
+  );
+
+  player.classList.add(
+    "flash"
+  );
+
+  setTimeout(() => {
+
+    player.classList.remove(
+      "flash"
+    );
+
+    if (running) {
+
+      currentState = "idle";
+
+      animationFrame = 0;
+      animationTimer = 0;
+
+      setSprite(
+        animations.idle.frames[0]
+      );
+
     }
 
+  }, 650);
 
-    /*
-       BERRY
-    */
+  updateHUD();
 
-    if (obj.type === "berry") {
+  beep(
+    220,
+    0.12,
+    "sawtooth"
+  );
 
-        addScore(10);
+  if (lives <= 0) {
 
-        playSound(650, 0.06);
-    }
+    endGame();
 
+  }
 
-    /*
-       GOLDEN BERRY
-    */
-
-    if (obj.type === "golden") {
-
-        addScore(50);
-
-        playSound(850, 0.1);
-    }
-
-
-    /*
-       ENEMY
-    */
-
-    if (obj.type === "enemy") {
-
-        /*
-           Agar player enemy ke upar hai
-           aur falling hai → SMASH
-        */
-
-        if (
-            jumping &&
-            velocityY < 0 &&
-            playerY > 5
-        ) {
-
-            addScore(25);
-
-            velocityY = JUMP_POWER * 0.55;
-
-            playSound(720, 0.08);
-
-        } else {
-
-            /*
-               Normal collision
-            */
-
-            triggerHurt();
-        }
-    }
-
-
-    /*
-       Object remove
-    */
-
-    if (
-        obj.type !== "enemy" ||
-        (jumping && velocityY < 0 && playerY > 5)
-    ) {
-
-        obj.element.remove();
-
-        objects.splice(index, 1);
-    }
 }
 
 
-/* =========================================================
-   UPDATE OBJECTS
-========================================================= */
+// =========================================
+// SMASH ENEMY
+// =========================================
 
-function updateObjects(dt) {
+function smashEnemy(
+  obj,
+  index
+) {
 
-    for (
-        let i = objects.length - 1;
-        i >= 0;
-        i--
-    ) {
+  obj.el.remove();
 
-        const obj = objects[i];
+  objects.splice(
+    index,
+    1
+  );
 
+  playerY =
+    Math.max(
+      playerY,
+      8
+    );
 
-        /*
-           ENEMY MOVEMENT
-        */
+  velocityY = 620;
 
-        if (obj.type === "enemy") {
+  jumping = true;
 
-            obj.x +=
-                obj.direction *
-                (25 * dt);
+  score += 25;
 
-            obj.element.style.left =
-                obj.x + "%";
+  if (score > best) {
 
+    best = score;
 
-            /*
-               Enemy wall hit
+    localStorage.setItem(
+      "berryQuestBest",
+      best
+    );
 
-               Agar screen se bahar chala jaye
-               to remove.
-            */
+  }
 
-            if (
-                obj.x < -10 ||
-                obj.x > 105
-            ) {
+  currentState = "jump";
 
-                obj.element.remove();
+  animationFrame = 1;
+  animationTimer = 0;
 
-                objects.splice(i, 1);
+  setSprite(
+    animations.jump.frames[1]
+  );
 
-                continue;
-            }
-        }
+  updateHUD();
 
+  beep(
+    980,
+    0.08
+  );
 
-        /*
-           COLLISION
-        */
-
-        collectObject(obj, i);
-    }
 }
 
 
-/* =========================================================
-   SPAWN SYSTEM
-========================================================= */
+// =========================================
+// GAME LOOP
+// =========================================
 
-function updateSpawning(dt) {
+function gameLoop(timestamp) {
 
-    spawnTimer += dt;
+  const dt =
+    Math.min(
+      (timestamp - lastTime) /
+        1000 || 0,
+      0.033
+    );
 
-    enemyTimer += dt;
+  lastTime = timestamp;
 
+  if (running) {
 
-    /*
-       Berry spawn rate
-    */
-
-    const berryRate =
-        Math.max(
-            0.65,
-            1.15 - score / 1800
-        );
-
-
-    if (spawnTimer >= berryRate) {
-
-        spawnTimer = 0;
-
-        /*
-           Small chance golden berry
-        */
-
-        if (Math.random() < 0.12) {
-
-            spawnGoldenBerry();
-
-        } else {
-
-            spawnBerry();
-        }
-    }
+    hitCooldown =
+      Math.max(
+        0,
+        hitCooldown - dt
+      );
 
 
-    /*
-       Enemy spawn rate
-    */
-
-    const enemyRate =
-        Math.max(
-            0.85,
-            1.8 - score / 1200
-        );
-
-
-    if (enemyTimer >= enemyRate) {
-
-        enemyTimer = 0;
-
-        spawnEnemy();
-    }
-}
-
-
-/* =========================================================
-   PLAYER MOVEMENT
-=========================================================
-
-   THIS IS THE MAIN MOVEMENT FUNCTION.
-
-   LEFT:
-       playerX decreases
-       idle sprite remains
-       character flips one way
-
-   RIGHT:
-       playerX increases
-       idle sprite remains
-       character flips other way
-
-   NO RUN SPRITES HERE.
-========================================================= */
-
-function updateMovement(dt) {
+    // =====================================
+    // MOVEMENT
+    // =====================================
 
     const movingLeft =
-        keys["ArrowLeft"] ||
-        keys["a"] ||
-        keys["A"];
+      keys.ArrowLeft;
 
     const movingRight =
-        keys["ArrowRight"] ||
-        keys["d"] ||
-        keys["D"];
+      keys.ArrowRight;
+
+    const moving =
+      movingLeft ||
+      movingRight;
 
 
-    /*
-       MOVE LEFT
-    */
+    // =====================================
+    // PLAYER HORIZONTAL MOVEMENT
+    // =====================================
 
     if (movingLeft) {
 
-        playerX -=
-            PLAYER_SPEED * dt;
+      playerX -=
+        45 * dt;
 
-        /*
-           Artwork ki original direction
-           ki wajah se scaleX(1) = LEFT
-        */
+      playerSprite.style.transform =
+        "scaleX(-1)";
 
-        playerSprite.style.transform =
-            "scaleX(1)";
     }
 
-
-    /*
-       MOVE RIGHT
-    */
 
     if (movingRight) {
 
-        playerX +=
-            PLAYER_SPEED * dt;
+      playerX +=
+        45 * dt;
 
-        /*
-           scaleX(-1) = RIGHT
-        */
+      playerSprite.style.transform =
+        "scaleX(1)";
 
-        playerSprite.style.transform =
-            "scaleX(-1)";
     }
 
-
-    /*
-       Screen boundaries
-    */
 
     playerX =
-        Math.max(
-            2,
-            Math.min(93, playerX)
-        );
-}
+      Math.max(
+        2,
+        Math.min(
+          93,
+          playerX
+        )
+      );
 
 
-/* =========================================================
-   PLAYER PHYSICS
-========================================================= */
+    // =====================================
+    // JUMP PHYSICS
+    // =====================================
 
-function updatePhysics(dt) {
+    if (jumping) {
 
-    if (!jumping) {
-        return;
-    }
-
-
-    /*
-       Gravity
-    */
-
-    velocityY -=
-        GRAVITY * dt;
-
-
-    /*
-       Vertical movement
-    */
-
-    playerY +=
+      playerY +=
         velocityY * dt;
 
+      velocityY -=
+        1750 * dt;
 
-    /*
-       Ground
-    */
 
-    if (playerY <= 0) {
+      // -----------------------------------
+      // LANDING
+      // -----------------------------------
+
+      if (playerY <= 0) {
 
         playerY = 0;
 
         velocityY = 0;
 
         jumping = false;
-    }
-}
 
+        currentState = "idle";
 
-/* =========================================================
-   UPDATE CHARACTER SPRITE
-=========================================================
+        animationFrame = 0;
+        animationTimer = 0;
 
-   PRIORITY:
-
-   1. HURT
-   2. HAPPY
-   3. JUMP
-   4. IDLE
-
-   Is se sprites mix nahi hongi.
-========================================================= */
-
-function updateCharacter(dt) {
-
-    /*
-       HURT
-    */
-
-    if (hurtActive) {
-
-        updateHurt(dt);
-
-        return;
-    }
-
-
-    /*
-       HAPPY
-    */
-
-    if (happyActive) {
-
-        updateHappy(dt);
-
-        return;
-    }
-
-
-    /*
-       JUMP
-    */
-
-    if (jumping) {
-
-        updateJumpSprite();
-
-        return;
-    }
-
-
-    /*
-       NORMAL / IDLE
-
-       Ye movement ke waqt bhi chalega.
-
-       Matlab:
-
-       Move Left
-       → idle animation + flip
-
-       Move Right
-       → idle animation + flip
-    */
-
-    updateIdleAnimation(dt);
-}
-
-
-/* =========================================================
-   MAIN GAME UPDATE
-========================================================= */
-
-function updateGame(dt) {
-
-    /*
-       Cooldown
-    */
-
-    if (hitCooldown > 0) {
-
-        hitCooldown -= dt;
-
-        if (hitCooldown < 0) {
-            hitCooldown = 0;
-        }
-    }
-
-
-    /*
-       Movement
-    */
-
-    updateMovement(dt);
-
-
-    /*
-       Jump physics
-    */
-
-    updatePhysics(dt);
-
-
-    /*
-       Character sprite
-    */
-
-    updateCharacter(dt);
-
-
-    /*
-       Objects
-    */
-
-    updateObjects(dt);
-
-
-    /*
-       Spawn
-    */
-
-    updateSpawning(dt);
-
-
-    /*
-       Position character
-    */
-
-    setPlayerPosition();
-}
-
-
-/* =========================================================
-   GAME LOOP
-========================================================= */
-
-function gameLoop(timestamp) {
-
-    if (!running) {
-        return;
-    }
-
-
-    /*
-       First frame
-    */
-
-    if (!lastTime) {
-        lastTime = timestamp;
-    }
-
-
-    let dt =
-        (timestamp - lastTime) / 1000;
-
-
-    lastTime = timestamp;
-
-
-    /*
-       Prevent huge jump after tab switching
-    */
-
-    dt =
-        Math.min(dt, 0.05);
-
-
-    updateGame(dt);
-
-
-    requestAnimationFrame(
-        gameLoop
-    );
-}
-
-
-/* =========================================================
-   START GAME
-========================================================= */
-
-function startGame() {
-
-    /*
-       Reset game
-    */
-
-    score = 0;
-
-    lives = 3;
-
-    playerX = 8;
-
-    playerY = 0;
-
-    velocityY = 0;
-
-    jumping = false;
-
-    objects = [];
-
-    spawnTimer = 0;
-
-    enemyTimer = 0;
-
-    hitCooldown = 0;
-
-    lastTime = 0;
-
-
-    /*
-       Reset character animation
-    */
-
-    idleFrame = 0;
-
-    idleTimer = 0;
-
-    happyActive = false;
-
-    happyFrame = 0;
-
-    happyTimer = 0;
-
-    hurtActive = false;
-
-    hurtTimer = 0;
-
-
-    /*
-       Reset high-score tracking
-    */
-
-    newBestThisRun = false;
-
-    happyShownThisRun = false;
-
-
-    /*
-       Remove old objects
-    */
-
-    const oldObjects =
-        game.querySelectorAll(
-            ".game-object"
+        setSprite(
+          animations.idle.frames[0]
         );
 
-    oldObjects.forEach(obj => {
-        obj.remove();
-    });
+      }
 
-
-    /*
-       Reset character
-    */
-
-    setCharacterSprite(
-        sprites.idle[0]
-    );
-
-    playerSprite.style.transform =
-        "scaleX(1)";
-
-    player.classList.remove("hurt");
-
-
-    /*
-       Update HUD
-    */
-
-    updateHUD();
-
-
-    /*
-       Hide message
-    */
-
-    message.classList.add("hidden");
-
-
-    /*
-       Button text
-    */
-
-    startBtn.textContent =
-        "RESTART ✨";
-
-
-    /*
-       Start
-    */
-
-    running = true;
-
-
-    requestAnimationFrame(
-        gameLoop
-    );
-}
-
-
-/* =========================================================
-   END GAME
-========================================================= */
-
-function endGame() {
-
-    running = false;
-
-    hurtActive = false;
-
-    happyActive = false;
-
-    player.classList.remove("hurt");
-
-
-    /*
-       Game over message
-    */
-
-    const icon =
-        message.querySelector(".big-icon");
-
-    const title =
-        message.querySelector("h2");
-
-    const text =
-        message.querySelector(
-            ".message-box p"
-        );
-
-
-    if (newBestThisRun) {
-
-        icon.textContent = "🏆";
-
-        title.textContent =
-            "NEW BEST! 🍓";
-
-        text.textContent =
-            `Amazing! You scored ${score} points!`;
-
-    } else {
-
-        icon.textContent = "🍓";
-
-        title.textContent =
-            "Game Over!";
-
-        text.textContent =
-            `You scored ${score} points.`;
     }
 
 
-    message.classList.remove(
-        "hidden"
-    );
+    // =====================================
+    // CHOOSE CHARACTER ANIMATION
+    // =====================================
+
+    if (!jumping) {
+
+      if (moving) {
+
+        setPlayerState("run");
+
+      } else {
+
+        setPlayerState("idle");
+
+      }
+
+    }
 
 
-    startBtn.textContent =
-        "PLAY AGAIN ✨";
+    // =====================================
+    // UPDATE ANIMATION
+    // =====================================
+
+    updateAnimation(dt);
 
 
-    playSound(120, 0.25);
-}
+    // =====================================
+    // SPAWN TIMERS
+    // =====================================
+
+    spawnTimer += dt;
+
+    enemyTimer += dt;
 
 
-/* =========================================================
-   KEYBOARD CONTROLS
-========================================================= */
-
-document.addEventListener(
-    "keydown",
-    function (event) {
-
-        keys[event.key] = true;
+    const berryRate =
+      Math.max(
+        0.65,
+        1.15 - score / 1800
+      );
 
 
-        /*
-           Prevent page scrolling
-        */
+    const enemyRate =
+      Math.max(
+        0.85,
+        1.8 - score / 1200
+      );
+
+
+    if (
+      spawnTimer >=
+      berryRate
+    ) {
+
+      spawnBerry();
+
+      spawnTimer = 0;
+
+    }
+
+
+    if (
+      enemyTimer >=
+      enemyRate
+    ) {
+
+      spawnEnemy();
+
+      enemyTimer = 0;
+
+    }
+
+
+    // =====================================
+    // COLLISIONS
+    // =====================================
+
+    const pRect =
+      playerRect();
+
+    const gameRect =
+      game.getBoundingClientRect();
+
+
+    for (
+      let index =
+        objects.length - 1;
+
+      index >= 0;
+
+      index--
+    ) {
+
+      const obj =
+        objects[index];
+
+
+      // ===================================
+      // ENEMY
+      // ===================================
+
+      if (
+        obj.type === "enemy"
+      ) {
+
+        obj.x +=
+          obj.direction *
+          obj.speed *
+          dt;
+
+        obj.el.style.left =
+          `${obj.x}%`;
+
 
         if (
-            [
-                "ArrowLeft",
-                "ArrowRight",
-                "ArrowUp",
-                " "
-            ].includes(event.key)
+          obj.baseY >
+          GROUND_HEIGHT() + 40
         ) {
 
-            event.preventDefault();
+          obj.el.style.bottom =
+            `${obj.baseY}px`;
+
         }
 
 
-        /*
-           JUMP
-        */
+        const rect =
+          obj.el.getBoundingClientRect();
+
+
+        // ---------------------------------
+        // SMASH ENEMY
+        // ---------------------------------
+
+        const playerIsFalling =
+          velocityY <= 0;
+
+        const playerAboveEnemy =
+          pRect.bottom <=
+          rect.top + 18;
+
 
         if (
-            event.key === "ArrowUp" ||
-            event.key === " "
+          rectsOverlap(
+            pRect,
+            rect
+          ) &&
+          jumping &&
+          playerIsFalling &&
+          playerAboveEnemy
         ) {
 
-            jump();
+          smashEnemy(
+            obj,
+            index
+          );
+
+          continue;
+
         }
 
 
-        /*
-           ENTER → start/restart
-        */
+        // ---------------------------------
+        // NORMAL HIT
+        // ---------------------------------
 
         if (
-            event.key === "Enter" &&
-            !running
+          rectsOverlap(
+            pRect,
+            rect
+          )
         ) {
 
-            startGame();
-        }
-    }
-);
+          obj.el.remove();
 
+          objects.splice(
+            index,
+            1
+          );
 
-document.addEventListener(
-    "keyup",
-    function (event) {
+          hurt();
 
-        keys[event.key] = false;
-    }
-);
+          continue;
 
-
-/* =========================================================
-   MOBILE CONTROLS
-========================================================= */
-
-document
-    .querySelectorAll(
-        ".mobile-controls button"
-    )
-    .forEach(button => {
-
-        const key =
-            button.dataset.key;
-
-
-        button.addEventListener(
-            "touchstart",
-            function (event) {
-
-                event.preventDefault();
-
-                keys[key] = true;
-
-
-                if (
-                    key === "ArrowUp"
-                ) {
-
-                    jump();
-                }
-            }
-        );
-
-
-        button.addEventListener(
-            "touchend",
-            function (event) {
-
-                event.preventDefault();
-
-                keys[key] = false;
-            }
-        );
-
-
-        button.addEventListener(
-            "mousedown",
-            function () {
-
-                keys[key] = true;
-
-
-                if (
-                    key === "ArrowUp"
-                ) {
-
-                    jump();
-                }
-            }
-        );
-
-
-        button.addEventListener(
-            "mouseup",
-            function () {
-
-                keys[key] = false;
-            }
-        );
-
-
-        button.addEventListener(
-            "mouseleave",
-            function () {
-
-                keys[key] = false;
-            }
-        );
-    });
-
-
-/* =========================================================
-   SOUND
-========================================================= */
-
-function playSound(
-    frequency = 440,
-    duration = 0.1
-) {
-
-    if (!soundEnabled) {
-        return;
-    }
-
-
-    try {
-
-        if (!audioCtx) {
-
-            audioCtx =
-                new (
-                    window.AudioContext ||
-                    window.webkitAudioContext
-                )();
         }
 
 
-        const oscillator =
-            audioCtx.createOscillator();
+        // ---------------------------------
+        // ENEMY OUTSIDE
+        // ---------------------------------
 
-        const gain =
-            audioCtx.createGain();
-
-
-        oscillator.frequency.value =
-            frequency;
-
-        oscillator.type =
-            "sine";
+        const outside =
+          rect.right <
+            gameRect.left - 10 ||
+          rect.left >
+            gameRect.right + 10;
 
 
-        gain.gain.setValueAtTime(
-            0.08,
-            audioCtx.currentTime
-        );
+        if (outside) {
 
-        gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            audioCtx.currentTime + duration
-        );
+          obj.el.remove();
 
+          objects.splice(
+            index,
+            1
+          );
 
-        oscillator.connect(gain);
+        }
 
-        gain.connect(
-            audioCtx.destination
-        );
+      }
 
 
-        oscillator.start();
+      // ===================================
+      // STRAWBERRY
+      // ===================================
 
-        oscillator.stop(
-            audioCtx.currentTime + duration
-        );
+      else {
 
-    } catch (error) {
+        const rect =
+          obj.el.getBoundingClientRect();
 
-        console.log(
-            "Sound unavailable."
-        );
+
+        if (
+          rectsOverlap(
+            pRect,
+            rect
+          )
+        ) {
+
+          collectObject(
+            obj,
+            index
+          );
+
+          continue;
+
+        }
+
+
+        if (
+          rect.right <
+          gameRect.left - 50
+        ) {
+
+          obj.el.remove();
+
+          objects.splice(
+            index,
+            1
+          );
+
+        }
+
+      }
+
     }
+
+  }
+
+
+  setPlayerPosition();
+
+  requestAnimationFrame(
+    gameLoop
+  );
+
 }
 
 
-/* =========================================================
-   SOUND BUTTON
-========================================================= */
-
-soundBtn.addEventListener(
-    "click",
-    function () {
-
-        soundEnabled =
-            !soundEnabled;
-
-        soundBtn.textContent =
-            soundEnabled
-                ? "🔊"
-                : "🔇";
-    }
-);
-
-
-/* =========================================================
-   START BUTTON
-========================================================= */
-
-startBtn.addEventListener(
-    "click",
-    function () {
-
-        startGame();
-    }
-);
-
-
-/* =========================================================
-   RESIZE
-========================================================= */
+// =========================================
+// KEYBOARD CONTROLS
+// =========================================
 
 window.addEventListener(
-    "resize",
-    function () {
+  "keydown",
+  e => {
 
-        setPlayerPosition();
+    if (
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "Space"
+      ].includes(e.code) ||
+      [
+        "ArrowLeft",
+        "ArrowRight"
+      ].includes(e.key)
+    ) {
+
+      e.preventDefault();
+
     }
+
+
+    keys[e.key] = true;
+
+    keys[e.code] = true;
+
+
+    if (
+      e.key === "ArrowUp" ||
+      e.code === "Space"
+    ) {
+
+      jump();
+
+    }
+
+
+    if (
+      e.key === "Enter" &&
+      !running
+    ) {
+
+      startGame();
+
+    }
+
+  }
 );
 
 
-/* =========================================================
-   INITIAL SETUP
-========================================================= */
+// =========================================
+// KEY RELEASE
+// =========================================
 
-bestEl.textContent = best;
+window.addEventListener(
+  "keyup",
+  e => {
 
-livesEl.textContent = lives;
+    keys[e.key] = false;
 
-scoreEl.textContent = score;
+    keys[e.code] = false;
 
-setCharacterSprite(
-    sprites.idle[0]
+  }
 );
+
+
+// =========================================
+// MOBILE CONTROLS
+// =========================================
+
+document
+  .querySelectorAll(
+    ".mobile-controls button"
+  )
+  .forEach(btn => {
+
+    const key =
+      btn.dataset.key;
+
+
+    const press = e => {
+
+      e.preventDefault();
+
+      keys[key] = true;
+
+
+      if (
+        key === "Space"
+      ) {
+
+        jump();
+
+      }
+
+    };
+
+
+    const release = e => {
+
+      e.preventDefault();
+
+      keys[key] = false;
+
+    };
+
+
+    btn.addEventListener(
+      "pointerdown",
+      press
+    );
+
+    btn.addEventListener(
+      "pointerup",
+      release
+    );
+
+    btn.addEventListener(
+      "pointerleave",
+      release
+    );
+
+  });
+
+
+// =========================================
+// START BUTTON
+// =========================================
+
+startBtn.addEventListener(
+  "click",
+  startGame
+);
+
+
+// =========================================
+// SOUND BUTTON
+// =========================================
+
+soundBtn.addEventListener(
+  "click",
+  () => {
+
+    soundEnabled =
+      !soundEnabled;
+
+    soundBtn.textContent =
+      soundEnabled
+        ? "🔊"
+        : "🔇";
+
+
+    if (soundEnabled) {
+
+      beep(
+        700,
+        0.06
+      );
+
+    }
+
+  }
+);
+
+
+// =========================================
+// WINDOW RESIZE
+// =========================================
+
+window.addEventListener(
+  "resize",
+  setPlayerPosition
+);
+
+
+// =========================================
+// INITIALIZE
+// =========================================
+
+currentState = "idle";
+
+animationFrame = 0;
+
+animationTimer = 0;
+
+playerSprite.src =
+  animations.idle.frames[0];
 
 setPlayerPosition();
+
+requestAnimationFrame(
+  gameLoop
+);
