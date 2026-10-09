@@ -360,6 +360,8 @@ function startGame() {
 
   hitCooldown = 0;
 
+  stateLockTimer = 0;
+
   spawnTimer = 0;
 
   enemyTimer = 0;
@@ -759,30 +761,18 @@ function hurt() {
     animations.hurt.frames[0]
   );
 
-  player.classList.add(
-    "flash"
-  );
 
-  setTimeout(() => {
+player.classList.add("flash");
 
-    player.classList.remove(
-      "flash"
-    );
+// Protect the hurt animation briefly.
+stateLockTimer = 0.65;
 
-    if (running) {
+// Remove the visual flash separately.
+// Do not change the animation state here.
+setTimeout(() => {
+  player.classList.remove("flash");
+}, 650);
 
-      currentState = "idle";
-
-      animationFrame = 0;
-      animationTimer = 0;
-
-      setSprite(
-        animations.idle.frames[0]
-      );
-
-    }
-
-  }, 650);
 
   updateHUD();
 
@@ -977,19 +967,31 @@ function gameLoop(timestamp) {
     // CHOOSE CHARACTER ANIMATION
     // =====================================
 
-    if (!jumping) {
+if (stateLockTimer > 0) {
+  stateLockTimer = Math.max(
+    0,
+    stateLockTimer - dt
+  );
+}
 
-      if (moving) {
+if (stateLockTimer <= 0) {
 
-        setPlayerState("run");
+  if (jumping) {
 
-      } else {
+    setPlayerState("jump");
 
-        setPlayerState("idle");
+  } else if (moving) {
 
-      }
+    setPlayerState("run");
 
-    }
+  } else {
+
+    setPlayerState("idle");
+
+  }
+
+}
+
 
 
     // =====================================
