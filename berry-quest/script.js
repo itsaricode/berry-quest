@@ -924,43 +924,29 @@ function gameLoop(timestamp) {
       );
 
 
-    // =====================================
-    // JUMP PHYSICS
-    // =====================================
+ 
+// =====================================
+// JUMP PHYSICS
+// =====================================
 
-    if (jumping) {
+if (jumping) {
 
-      playerY +=
-        velocityY * dt;
+  playerY += velocityY * dt;
+  velocityY -= 1750 * dt;
 
-      velocityY -=
-        1750 * dt;
+  // LANDING
+  if (playerY <= 0) {
 
+    playerY = 0;
+    velocityY = 0;
+    jumping = false;
 
-      // -----------------------------------
-      // LANDING
-      // -----------------------------------
+    // Don't force idle here.
+    // The animation selector below will decide
+    // between RUN and IDLE based on the keys.
+  }
 
-      if (playerY <= 0) {
-
-        playerY = 0;
-
-        velocityY = 0;
-
-        jumping = false;
-
-        currentState = "idle";
-
-        animationFrame = 0;
-        animationTimer = 0;
-
-        setSprite(
-          animations.idle.frames[0]
-        );
-
-      }
-
-    }
+}
 
 
     // =====================================
