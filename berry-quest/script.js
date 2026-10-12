@@ -243,7 +243,7 @@ function resetPlayer() {
 }
 
 // =========================================
-// START GAME (Updated with safe key reset)
+// START GAME (Fully Fixed State Reset)
 // =========================================
 
 function startGame() {
@@ -259,18 +259,20 @@ function startGame() {
   playerY = 0;
   velocityY = 0;
   jumping = false;
+  
+  // Fully clear timers so states don't lock
   hitCooldown = 0;
   stateLockTimer = 0;
   spawnTimer = 0;
   enemyTimer = 0;
+  
   running = true;
 
-  currentState = "idle";
-  animationFrame = 0;
-  animationTimer = 0;
+  // Forcefully reset the animation state machine
+  currentState = ""; // Clear currentState first so setPlayerState forces an update
+  setPlayerState("idle");
 
   playerSprite.style.transform = "scaleX(1)";
-  setSprite(animations.idle.frames[0]);
 
   message.classList.add("hidden");
   updateHUD();
