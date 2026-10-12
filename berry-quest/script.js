@@ -242,7 +242,6 @@ function resetPlayer() {
   setPlayerPosition();
 }
 
-
 // =========================================
 // START GAME (Updated with safe key reset)
 // =========================================
@@ -278,7 +277,6 @@ function startGame() {
   setPlayerPosition();
   beep(700, 0.08);
 }
-
 
 // =========================================
 // GAME OVER
