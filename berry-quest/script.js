@@ -141,63 +141,33 @@ function setPlayerState(newState) {
 }
 
 
+
 // =========================================
-// ANIMATION ENGINE
+// ANIMATION ENGINE — FIXED
 // =========================================
 
 function updateAnimation(dt) {
-
   const animation = animations[currentState];
 
   if (!animation) return;
 
   animationTimer += dt;
 
-  if (
-    animationTimer >=
-    animation.frameDuration
-  ) {
+  while (animationTimer >= animation.frameDuration) {
+    animationTimer -= animation.frameDuration;
 
-    animationTimer -=
-      animation.frameDuration;
-
-    animationFrame++;
-
-    // LOOP
-    if (animation.loop) {
-
-      if (
-        animationFrame >=
-        animation.frames.length
-      ) {
-
-        animationFrame = 0;
-
-      }
-
+    if (animationFrame < animation.frames.length - 1) {
+      animationFrame++;
+    } else if (animation.loop) {
+      animationFrame = 0;
+    } else {
+      // One-time animations hold their final frame
+      animationTimer = 0;
+      break;
     }
 
-    // ONE TIME
-    else {
-
-      if (
-        animationFrame >=
-        animation.frames.length
-      ) {
-
-        animationFrame =
-          animation.frames.length - 1;
-
-      }
-
-    }
-
-    setSprite(
-      animation.frames[animationFrame]
-    );
-
+    setSprite(animation.frames[animationFrame]);
   }
-
 }
 
 
