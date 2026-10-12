@@ -40,6 +40,8 @@ let stateLockTimer = 0;
 let soundEnabled = true;
 let audioCtx = null;
 
+let happyInterval = null;
+let happyTimeout = null;
 
 // =========================================
 // CHARACTER ANIMATIONS
@@ -308,34 +310,40 @@ function endGame() {
   beep(180, 0.2, "sawtooth");
 }
 
-
 // =========================================
-// HAPPY ANIMATION
+// HAPPY ANIMATION (Fixed with Timer Cleanup)
 // =========================================
 
 function playHappyAnimation() {
+  // Purane timers ko saaf karein taaki overlap na ho
+  clearInterval(happyInterval);
+  clearTimeout(happyTimeout);
+
   currentState = "happy";
   animationFrame = 0;
   animationTimer = 0;
   setSprite(animations.happy.frames[0]);
 
-  const happyTimer = setInterval(() => {
+  happyInterval = setInterval(() => {
     animationFrame++;
     if (animationFrame >= animations.happy.frames.length) {
       animationFrame = 0;
     }
-    setSprite(animations.happy.frames[animationFrame]);
+    setSprite(
+      animations.happy.frames[
+        animationFrame
+      ]
+    );
   }, 180);
 
-  setTimeout(() => {
-    clearInterval(happyTimer);
+  happyTimeout = setTimeout(() => {
+    clearInterval(happyInterval);
     currentState = "idle";
     animationFrame = 0;
     animationTimer = 0;
     setSprite(animations.idle.frames[0]);
   }, 1800);
 }
-
 
 // =========================================
 // JUMP
