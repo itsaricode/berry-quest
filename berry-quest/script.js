@@ -244,12 +244,15 @@ function resetPlayer() {
 
 
 // =========================================
-// START GAME
+// START GAME (Updated with safe key reset)
 // =========================================
 
 function startGame() {
   objects.forEach(object => object.el.remove());
   objects = [];
+
+  // Clear any stuck key states
+  keys = {};
 
   score = 0;
   lives = 3;
@@ -648,6 +651,11 @@ window.addEventListener("keydown", e => {
 window.addEventListener("keyup", e => {
   keys[e.key] = false;
   keys[e.code] = false;
+});
+
+// Clear keys if window loses focus to prevent sliding/ghost inputs
+window.addEventListener("blur", () => {
+  keys = {};
 });
 
 document.querySelectorAll(".mobile-controls button").forEach(btn => {
