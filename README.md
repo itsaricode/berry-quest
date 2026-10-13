@@ -53,6 +53,12 @@ Berry-Quest/
 
 *Adjust the structure above to match your actual repository and asset folders.*
 
+
+
+https://github.com/user-attachments/assets/597be2f7-dc44-4779-8b27-81d82c22e73e
+
+
+
 ## 🌱 Future Improvements
 
 - Character animations and additional poses
