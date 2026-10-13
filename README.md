@@ -32,9 +32,9 @@ Collect strawberries, avoid enemies, beat your high score, and enjoy a little re
 1. Clone this repository:
 
    ```bash
-   git clone 
-   
+ 
    https://github.com/itsaricode/berry-quest.git
+   
    ```
 
 2. Open the project folder.
