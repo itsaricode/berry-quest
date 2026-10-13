@@ -52,11 +52,11 @@ const animations = {
   },
   jump: {
     frames: [
-      "assets/character/jump-1.png"
-      
+      "assets/character/jump-1.png",
+      "assets/character/jump-2.png"
     ],
     frameDuration: 0.12,
-    loop: false
+    loop: true // Isko true kar dein taaki animation freeze na ho!
   }
 };
 
