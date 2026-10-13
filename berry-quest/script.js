@@ -571,13 +571,19 @@ function gameLoop(timestamp) {
     }
 
     // =====================================
-    // COLLISIONS
+    // COLLISIONS (Safe & Crash-Proof)
     // =====================================
     const pRect = playerRect();
     const gameRect = game.getBoundingClientRect();
 
     for (let index = objects.length - 1; index >= 0; index--) {
       const obj = objects[index];
+      
+      // Safety check: Agar object ka element DOM mein nahi hai toh array se hata dein
+      if (!obj || !obj.el || !obj.el.isConnected) {
+        objects.splice(index, 1);
+        continue;
+      }
 
       if (obj.type === "enemy") {
         obj.x += obj.direction * obj.speed * dt;
@@ -597,14 +603,15 @@ function gameLoop(timestamp) {
         }
 
         if (rectsOverlap(pRect, rect)) {
-          obj.el.remove();
+          if (obj.el.parentNode) obj.el.remove();
           objects.splice(index, 1);
           hurt();
           continue;
         }
 
-        if (rect.right < gameRect.left - 10 || rect.left > gameRect.right + 10) {
-          obj.el.remove();
+        const outside = rect.right < gameRect.left - 10 || rect.left > gameRect.right + 10;
+        if (outside) {
+          if (obj.el.parentNode) obj.el.remove();
           objects.splice(index, 1);
         }
       } else {
@@ -616,13 +623,13 @@ function gameLoop(timestamp) {
         }
 
         if (rect.right < gameRect.left - 50) {
-          obj.el.remove();
+          if (obj.el.parentNode) obj.el.remove();
           objects.splice(index, 1);
-        }
-      }
-    }
+       }
+     }
   }
-
+  
+}
   setPlayerPosition();
   requestAnimationFrame(gameLoop);
 }
