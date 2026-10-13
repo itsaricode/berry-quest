@@ -38,7 +38,7 @@ let soundEnabled = true;
 let audioCtx = null;
 
 // =========================================
-// ANIMATIONS (Idle & Jump)
+// STABLE IDLE ANIMATION
 // =========================================
 
 const animations = {
@@ -49,18 +49,9 @@ const animations = {
     ],
     frameDuration: 0.45,
     loop: true
-  },
-  jump: {
-    frames: [
-      "assets/character/jump-1.png",
-      "assets/character/jump-2.png"
-    ],
-    frameDuration: 0.12,
-    loop: false
   }
 };
 
-let currentState = "idle";
 let animationFrame = 0;
 let animationTimer = 0;
 
@@ -71,34 +62,15 @@ function setSprite(src) {
   }
 }
 
-function setPlayerState(newState) {
-  if (!animations[newState]) return;
-  if (currentState === newState) return;
-
-  currentState = newState;
-  animationFrame = 0;
-  animationTimer = 0;
-  setSprite(animations[newState].frames[0]);
-}
-
 function updateAnimation(dt) {
-  const animation = animations[currentState];
+  const animation = animations.idle;
   if (!animation) return;
 
   animationTimer += dt;
 
   while (animationTimer >= animation.frameDuration) {
     animationTimer -= animation.frameDuration;
-
-    if (animationFrame < animation.frames.length - 1) {
-      animationFrame++;
-    } else if (animation.loop) {
-      animationFrame = 0;
-    } else {
-      animationTimer = 0;
-      break;
-    }
-
+    animationFrame = (animationFrame + 1) % animation.frames.length;
     setSprite(animation.frames[animationFrame]);
   }
 }
@@ -113,7 +85,7 @@ const GROUND_HEIGHT = () =>
   game.clientHeight * 0.28;
 
 // =========================================
-// SOUND
+// SOUND (Web Audio API Beeps)
 // =========================================
 
 function beep(freq = 600, duration = 0.07, type = "square") {
@@ -174,10 +146,10 @@ function startGame() {
   
   running = true;
 
-  currentState = "";
-  setPlayerState("idle");
-
+  animationFrame = 0;
+  animationTimer = 0;
   playerSprite.style.transform = "scaleX(1)";
+  setSprite(animations.idle.frames[0]);
 
   message.classList.add("hidden");
   updateHUD();
@@ -218,8 +190,6 @@ function jump() {
 
   jumping = true;
   velocityY = 700;
-  currentState = ""; // Forcefully reset state so jump sprite updates instantly
-  setPlayerState("jump");
   beep(850, 0.06);
 }
 
@@ -325,8 +295,6 @@ function smashEnemy(obj, index) {
   playerY = Math.max(playerY, 8);
   velocityY = 620;
   jumping = true;
-  currentState = ""; // Forcefully reset state
-  setPlayerState("jump");
   score += 25;
 
   if (score > best) {
@@ -347,7 +315,6 @@ function gameLoop(timestamp) {
   lastTime = timestamp;
 
   if (running) {
-    // Movement
     const movingLeft = keys.ArrowLeft;
     const movingRight = keys.ArrowRight;
 
@@ -362,7 +329,6 @@ function gameLoop(timestamp) {
 
     playerX = Math.max(2, Math.min(93, playerX));
 
-    // Jump Physics
     if (jumping) {
       playerY += velocityY * dt;
       velocityY -= 1750 * dt;
@@ -374,24 +340,8 @@ function gameLoop(timestamp) {
       }
     }
 
-    // State machine for Jump vs Idle
-    // State machine for Jump vs Idle
-    if (playerY <= 0) {
-      jumping = false;
-      if (currentState === "jump") {
-        currentState = ""; // Forcefully reset so idle can take over immediately
-      }
-    }
-
-    if (jumping) {
-      setPlayerState("jump");
-    } else {
-      setPlayerState("idle");
-    }
-
     updateAnimation(dt);
 
-    // Spawns
     spawnTimer += dt;
     enemyTimer += dt;
 
@@ -407,7 +357,6 @@ function gameLoop(timestamp) {
       enemyTimer = 0;
     }
 
-    // Collisions
     const pRect = playerRect();
     const gameRect = game.getBoundingClientRect();
 
@@ -533,7 +482,6 @@ window.addEventListener("resize", setPlayerPosition);
 // INITIALIZE
 // =========================================
 
-currentState = "idle";
 animationFrame = 0;
 animationTimer = 0;
 playerSprite.src = animations.idle.frames[0];
