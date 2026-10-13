@@ -227,19 +227,18 @@ function setPlayerPosition() {
 
 
 // =========================================
-// START GAME (Bulletproof State Reset)
+// START GAME (Complete Clean Reset)
 // =========================================
 
 function startGame() {
-  // Stop any lingering happy animations or timeouts
+  // Purane happy animations aur timers ko rokein
   clearInterval(happyInterval);
   clearTimeout(happyTimeout);
 
-  // Clear existing objects
   objects.forEach(object => object.el.remove());
   objects = [];
 
-  // Clear all pressed keys to prevent ghost inputs
+  // Keys ko clear karein
   keys = {};
 
   score = 0;
@@ -249,6 +248,7 @@ function startGame() {
   velocityY = 0;
   jumping = false;
   
+  // Saare locks aur timers ko zero par set karein
   hitCooldown = 0;
   stateLockTimer = 0;
   spawnTimer = 0;
@@ -256,18 +256,22 @@ function startGame() {
   
   running = true;
 
-  // Forcefully reset animation state to idle
-  currentState = "";
-  setPlayerState("idle");
+  // Hurt flash class ko remove karein agar lagi ho
+  player.classList.remove("flash");
+
+  // State ko forcefully IDLE par set karein
+  currentState = "idle";
+  animationFrame = 0;
+  animationTimer = 0;
 
   playerSprite.style.transform = "scaleX(1)";
+  setSprite(animations.idle.frames[0]);
 
   message.classList.add("hidden");
   updateHUD();
   setPlayerPosition();
   beep(700, 0.08);
 }
-
 
 // =========================================
 // GAME OVER
