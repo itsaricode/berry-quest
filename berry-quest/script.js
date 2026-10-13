@@ -375,8 +375,12 @@ function gameLoop(timestamp) {
     }
 
     // State machine for Jump vs Idle
+    // State machine for Jump vs Idle
     if (playerY <= 0) {
       jumping = false;
+      if (currentState === "jump") {
+        currentState = ""; // Forcefully reset so idle can take over immediately
+      }
     }
 
     if (jumping) {
