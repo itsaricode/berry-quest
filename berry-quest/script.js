@@ -249,6 +249,9 @@ function resetPlayer() {
 // =========================================
 
 function startGame() {
+
+  clearInterval(happyInterval);
+  clearTimeout(happyTimeout);
   objects.forEach(object => object.el.remove());
   objects = [];
 
