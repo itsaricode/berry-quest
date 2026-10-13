@@ -108,12 +108,13 @@ let animationTimer = 0;
 
 
 // =========================================
-// SET SPRITE
+// SET SPRITE (Fixed Attribute Sync)
 // =========================================
 
 function setSprite(src) {
   if (playerSprite.getAttribute("src") !== src) {
     playerSprite.src = src;
+    playerSprite.setAttribute("src", src);
   }
 }
 
