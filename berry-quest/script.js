@@ -34,21 +34,14 @@ let lastTime = 0;
 let spawnTimer = 0;
 let enemyTimer = 0;
 
-let hitCooldown = 0;
-let stateLockTimer = 0;
-
 let soundEnabled = true;
 let audioCtx = null;
 
-let happyInterval = null;
-let happyTimeout = null;
-
 // =========================================
-// CHARACTER ANIMATIONS
+// ONLY IDLE ANIMATION (Simplified for Testing)
 // =========================================
 
 const animations = {
-
   idle: {
     frames: [
       "assets/character/idle-1.png",
@@ -56,60 +49,11 @@ const animations = {
     ],
     frameDuration: 0.45,
     loop: true
-  },
-
-  run: {
-    frames: [
-      "assets/character/run-1.png",
-      "assets/character/run-2.png",
-      "assets/character/run-3.png",
-      "assets/character/run-4.png"
-    ],
-    frameDuration: 0.09,
-    loop: true
-  },
-
-  jump: {
-    frames: [
-      "assets/character/jump-1.png",
-      "assets/character/jump-2.png"
-    ],
-    frameDuration: 0.12,
-    loop: false
-  },
-
-  hurt: {
-    frames: [
-      "assets/character/hurt.png"
-    ],
-    frameDuration: 0.3,
-    loop: false
-  },
-
-  happy: {
-    frames: [
-      "assets/character/happy-1.png",
-      "assets/character/happy-2.png"
-    ],
-    frameDuration: 0.18,
-    loop: true
   }
-
 };
 
-
-// =========================================
-// ANIMATION STATE
-// =========================================
-
-let currentState = "idle";
 let animationFrame = 0;
 let animationTimer = 0;
-
-
-// =========================================
-// SET SPRITE (Fixed Attribute Sync)
-// =========================================
 
 function setSprite(src) {
   if (playerSprite.getAttribute("src") !== src) {
@@ -118,64 +62,27 @@ function setSprite(src) {
   }
 }
 
-
-// =========================================
-// CHANGE PLAYER STATE
-// =========================================
-
-function setPlayerState(newState) {
-  if (!animations[newState]) return;
-  if (currentState === newState) return;
-
-  currentState = newState;
-  animationFrame = 0;
-  animationTimer = 0;
-
-  setSprite(animations[newState].frames[0]);
-}
-
-
-// =========================================
-// ANIMATION ENGINE
-// =========================================
-
 function updateAnimation(dt) {
-  const animation = animations[currentState];
+  const animation = animations.idle;
   if (!animation) return;
 
   animationTimer += dt;
 
   while (animationTimer >= animation.frameDuration) {
     animationTimer -= animation.frameDuration;
-
-    if (animationFrame < animation.frames.length - 1) {
-      animationFrame++;
-    } else if (animation.loop) {
-      animationFrame = 0;
-    } else {
-      animationTimer = 0;
-      break;
-    }
-
+    animationFrame = (animationFrame + 1) % animation.frames.length;
     setSprite(animation.frames[animationFrame]);
   }
 }
 
-
 // =========================================
-// INITIAL HUD
+// INITIAL HUD & SIZE
 // =========================================
 
 bestEl.textContent = best;
 
-
-// =========================================
-// GAME SIZE
-// =========================================
-
 const GROUND_HEIGHT = () =>
   game.clientHeight * 0.28;
-
 
 // =========================================
 // SOUND
@@ -201,21 +108,11 @@ function beep(freq = 600, duration = 0.07, type = "square") {
   } catch {}
 }
 
-
-// =========================================
-// HUD
-// =========================================
-
 function updateHUD() {
   scoreEl.textContent = score;
   bestEl.textContent = best;
   livesEl.textContent = lives;
 }
-
-
-// =========================================
-// CHARACTER POSITION
-// =========================================
 
 function setPlayerPosition() {
   const ground = GROUND_HEIGHT();
@@ -225,20 +122,16 @@ function setPlayerPosition() {
   player.style.bottom = `${bottom}px`;
 }
 
-
 // =========================================
-// START GAME (Complete Clean Reset)
+// START GAME
 // =========================================
 
 function startGame() {
-  // Purane happy animations aur timers ko rokein
-  clearInterval(happyInterval);
-  clearTimeout(happyTimeout);
-
-  objects.forEach(object => object.el.remove());
+  objects.forEach(object => {
+    if (object.el && object.el.parentNode) object.el.remove();
+  });
   objects = [];
 
-  // Keys ko clear karein
   keys = {};
 
   score = 0;
@@ -248,22 +141,13 @@ function startGame() {
   velocityY = 0;
   jumping = false;
   
-  // Saare locks aur timers ko zero par set karein
-  hitCooldown = 0;
-  stateLockTimer = 0;
   spawnTimer = 0;
   enemyTimer = 0;
   
   running = true;
 
-  // Hurt flash class ko remove karein agar lagi ho
-  player.classList.remove("flash");
-
-  // State ko forcefully IDLE par set karein
-  currentState = "idle";
   animationFrame = 0;
   animationTimer = 0;
-
   playerSprite.style.transform = "scaleX(1)";
   setSprite(animations.idle.frames[0]);
 
@@ -287,12 +171,8 @@ function endGame() {
 
   updateHUD();
 
-  if (score > 0 && score >= best) {
-    playHappyAnimation();
-  }
-
   message.querySelector("h2").textContent = "Game Over 💗";
-  message.querySelector(".big-icon").textContent = score >= best && score > 0 ? "🏆" : "🍓";
+  message.querySelector(".big-icon").textContent = "🍓";
   message.querySelector(".message-box p").innerHTML =
     `You collected <strong>${score}</strong> points!<br>Best score: <strong>${best}</strong>`;
 
@@ -300,38 +180,6 @@ function endGame() {
   message.classList.remove("hidden");
   beep(180, 0.2, "sawtooth");
 }
-
-
-// =========================================
-// HAPPY ANIMATION
-// =========================================
-
-function playHappyAnimation() {
-  clearInterval(happyInterval);
-  clearTimeout(happyTimeout);
-
-  currentState = "happy";
-  animationFrame = 0;
-  animationTimer = 0;
-  setSprite(animations.happy.frames[0]);
-
-  happyInterval = setInterval(() => {
-    animationFrame++;
-    if (animationFrame >= animations.happy.frames.length) {
-      animationFrame = 0;
-    }
-    setSprite(animations.happy.frames[animationFrame]);
-  }, 180);
-
-  happyTimeout = setTimeout(() => {
-    clearInterval(happyInterval);
-    currentState = "idle";
-    animationFrame = 0;
-    animationTimer = 0;
-    setSprite(animations.idle.frames[0]);
-  }, 1800);
-}
-
 
 // =========================================
 // JUMP
@@ -342,13 +190,11 @@ function jump() {
 
   jumping = true;
   velocityY = 700;
-  setPlayerState("jump");
   beep(850, 0.06);
 }
 
-
 // =========================================
-// SPAWN STRAWBERRY & ENEMY
+// SPAWNS
 // =========================================
 
 function spawnBerry() {
@@ -395,9 +241,8 @@ function spawnEnemy() {
   });
 }
 
-
 // =========================================
-// COLLISION
+// COLLISIONS
 // =========================================
 
 function rectsOverlap(a, b) {
@@ -408,13 +253,8 @@ function playerRect() {
   return player.getBoundingClientRect();
 }
 
-
-// =========================================
-// OBJECT INTERACTIONS
-// =========================================
-
 function collectObject(obj, index) {
-  obj.el.remove();
+  if (obj.el && obj.el.parentNode) obj.el.remove();
   objects.splice(index, 1);
 
   if (obj.type === "golden") {
@@ -434,24 +274,14 @@ function collectObject(obj, index) {
 }
 
 function hurt() {
-  if (hitCooldown > 0) return;
-
   lives--;
-  hitCooldown = 1.2;
-  currentState = "hurt";
-  animationFrame = 0;
-  animationTimer = 0;
-  setSprite(animations.hurt.frames[0]);
+  updateHUD();
+  beep(220, 0.12, "sawtooth");
 
   player.classList.add("flash");
-  stateLockTimer = 0.65;
-
   setTimeout(() => {
     player.classList.remove("flash");
   }, 650);
-
-  updateHUD();
-  beep(220, 0.12, "sawtooth");
 
   if (lives <= 0) {
     endGame();
@@ -459,7 +289,7 @@ function hurt() {
 }
 
 function smashEnemy(obj, index) {
-  obj.el.remove();
+  if (obj.el && obj.el.parentNode) obj.el.remove();
   objects.splice(index, 1);
 
   playerY = Math.max(playerY, 8);
@@ -472,15 +302,9 @@ function smashEnemy(obj, index) {
     localStorage.setItem("berryQuestBest", best);
   }
 
-  currentState = "jump";
-  animationFrame = 1;
-  animationTimer = 0;
-  setSprite(animations.jump.frames[1]);
-
   updateHUD();
   beep(980, 0.08);
 }
-
 
 // =========================================
 // GAME LOOP
@@ -491,20 +315,14 @@ function gameLoop(timestamp) {
   lastTime = timestamp;
 
   if (running) {
-    hitCooldown = Math.max(0, hitCooldown - dt);
-
-    // =====================================
-    // MOVEMENT & CONTROLS
-    // =====================================
+    // Movement
     const movingLeft = keys.ArrowLeft;
     const movingRight = keys.ArrowRight;
-    const moving = movingLeft || movingRight;
 
     if (movingLeft) {
       playerX -= 45 * dt;
       playerSprite.style.transform = "scaleX(-1)";
     }
-
     if (movingRight) {
       playerX += 45 * dt;
       playerSprite.style.transform = "scaleX(1)";
@@ -512,9 +330,7 @@ function gameLoop(timestamp) {
 
     playerX = Math.max(2, Math.min(93, playerX));
 
-    // =====================================
-    // JUMP PHYSICS
-    // =====================================
+    // Jump Physics
     if (jumping) {
       playerY += velocityY * dt;
       velocityY -= 1750 * dt;
@@ -526,34 +342,10 @@ function gameLoop(timestamp) {
       }
     }
 
-    // =====================================
-    // ANIMATION STATE MACHINE
-    // =====================================
-    if (stateLockTimer > 0) {
-      stateLockTimer = Math.max(0, stateLockTimer - dt);
-    }
-
-    if (stateLockTimer <= 0) {
-      // Ensure jumping flag clears if on the ground
-      if (playerY <= 0) {
-        jumping = false;
-      }
-
-      if (jumping) {
-        setPlayerState("jump");
-      } else if (moving) {
-        setPlayerState("run");
-      } else {
-        setPlayerState("idle");
-      }
-    }
-
-    // Single animation update call per frame
+    // Always update idle animation smoothly
     updateAnimation(dt);
 
-    // =====================================
-    // SPAWN TIMERS
-    // =====================================
+    // Spawns
     spawnTimer += dt;
     enemyTimer += dt;
 
@@ -564,26 +356,24 @@ function gameLoop(timestamp) {
       spawnBerry();
       spawnTimer = 0;
     }
-
     if (enemyTimer >= enemyRate) {
       spawnEnemy();
       enemyTimer = 0;
     }
 
-    // =====================================
-    // COLLISIONS (Safe & Crash-Proof)
-    // =====================================
+    // Collisions
     const pRect = playerRect();
     const gameRect = game.getBoundingClientRect();
 
     for (let index = objects.length - 1; index >= 0; index--) {
       const obj = objects[index];
       
-      // Safety check: Agar object ka element DOM mein nahi hai toh array se hata dein
       if (!obj || !obj.el || !obj.el.isConnected) {
         objects.splice(index, 1);
         continue;
       }
+
+      const rect = obj.el.getBoundingClientRect();
 
       if (obj.type === "enemy") {
         obj.x += obj.direction * obj.speed * dt;
@@ -593,7 +383,6 @@ function gameLoop(timestamp) {
           obj.el.style.bottom = `${obj.baseY}px`;
         }
 
-        const rect = obj.el.getBoundingClientRect();
         const playerIsFalling = velocityY <= 0;
         const playerAboveEnemy = pRect.bottom <= rect.top + 18;
 
@@ -609,14 +398,11 @@ function gameLoop(timestamp) {
           continue;
         }
 
-        const outside = rect.right < gameRect.left - 10 || rect.left > gameRect.right + 10;
-        if (outside) {
+        if (rect.right < gameRect.left - 10 || rect.left > gameRect.right + 10) {
           if (obj.el.parentNode) obj.el.remove();
           objects.splice(index, 1);
         }
       } else {
-        const rect = obj.el.getBoundingClientRect();
-
         if (rectsOverlap(pRect, rect)) {
           collectObject(obj, index);
           continue;
@@ -625,15 +411,14 @@ function gameLoop(timestamp) {
         if (rect.right < gameRect.left - 50) {
           if (obj.el.parentNode) obj.el.remove();
           objects.splice(index, 1);
-       }
-     }
+        }
+      }
+    }
   }
-  
-}
+
   setPlayerPosition();
   requestAnimationFrame(gameLoop);
 }
-
 
 // =========================================
 // EVENT LISTENERS
@@ -665,7 +450,6 @@ window.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
-// Clear keys if window loses focus to prevent sliding/ghost inputs
 window.addEventListener("blur", () => {
   keys = {};
 });
@@ -699,12 +483,10 @@ soundBtn.addEventListener("click", () => {
 
 window.addEventListener("resize", setPlayerPosition);
 
-
 // =========================================
 // INITIALIZE
 // =========================================
 
-currentState = "idle";
 animationFrame = 0;
 animationTimer = 0;
 playerSprite.src = animations.idle.frames[0];
