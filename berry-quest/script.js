@@ -226,36 +226,19 @@ function setPlayerPosition() {
 
 
 // =========================================
-// RESET PLAYER
-// =========================================
-
-function resetPlayer() {
-  playerX = 8;
-  playerY = 0;
-  velocityY = 0;
-  jumping = false;
-
-  currentState = "idle";
-  animationFrame = 0;
-  animationTimer = 0;
-
-  playerSprite.style.transform = "scaleX(1)";
-  setSprite(animations.idle.frames[0]);
-  setPlayerPosition();
-}
-
-// =========================================
-// START GAME (Fully Fixed State Reset)
+// START GAME (Bulletproof State Reset)
 // =========================================
 
 function startGame() {
-
+  // Stop any lingering happy animations or timeouts
   clearInterval(happyInterval);
   clearTimeout(happyTimeout);
+
+  // Clear existing objects
   objects.forEach(object => object.el.remove());
   objects = [];
 
-  // Clear any stuck key states
+  // Clear all pressed keys to prevent ghost inputs
   keys = {};
 
   score = 0;
@@ -265,7 +248,6 @@ function startGame() {
   velocityY = 0;
   jumping = false;
   
-  // Fully clear timers so states don't lock
   hitCooldown = 0;
   stateLockTimer = 0;
   spawnTimer = 0;
@@ -273,8 +255,8 @@ function startGame() {
   
   running = true;
 
-  // Forcefully reset the animation state machine
-  currentState = ""; // Clear currentState first so setPlayerState forces an update
+  // Forcefully reset animation state to idle
+  currentState = "";
   setPlayerState("idle");
 
   playerSprite.style.transform = "scaleX(1)";
@@ -284,6 +266,7 @@ function startGame() {
   setPlayerPosition();
   beep(700, 0.08);
 }
+
 
 // =========================================
 // GAME OVER
@@ -313,12 +296,12 @@ function endGame() {
   beep(180, 0.2, "sawtooth");
 }
 
+
 // =========================================
-// HAPPY ANIMATION (Fixed with Timer Cleanup)
+// HAPPY ANIMATION
 // =========================================
 
 function playHappyAnimation() {
-  // Purane timers ko saaf karein taaki overlap na ho
   clearInterval(happyInterval);
   clearTimeout(happyTimeout);
 
@@ -332,11 +315,7 @@ function playHappyAnimation() {
     if (animationFrame >= animations.happy.frames.length) {
       animationFrame = 0;
     }
-    setSprite(
-      animations.happy.frames[
-        animationFrame
-      ]
-    );
+    setSprite(animations.happy.frames[animationFrame]);
   }, 180);
 
   happyTimeout = setTimeout(() => {
@@ -347,6 +326,7 @@ function playHappyAnimation() {
     setSprite(animations.idle.frames[0]);
   }, 1800);
 }
+
 
 // =========================================
 // JUMP
@@ -549,6 +529,11 @@ function gameLoop(timestamp) {
     }
 
     if (stateLockTimer <= 0) {
+      // Ensure jumping flag clears if on the ground
+      if (playerY <= 0) {
+        jumping = false;
+      }
+
       if (jumping) {
         setPlayerState("jump");
       } else if (moving) {
@@ -651,7 +636,11 @@ window.addEventListener("keydown", e => {
   keys[e.code] = true;
 
   if (e.key === "ArrowUp" || e.code === "Space") {
-    jump();
+    if (!running) {
+      startGame();
+    } else {
+      jump();
+    }
   }
 
   if (e.key === "Enter" && !running) {
