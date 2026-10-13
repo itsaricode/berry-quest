@@ -56,7 +56,7 @@ const animations = {
       "assets/character/jump-2.png"
     ],
     frameDuration: 0.12,
-    loop: true // Isko true kar dein taaki animation freeze na ho!
+    loop: true
   }
 };
 
@@ -218,6 +218,7 @@ function jump() {
 
   jumping = true;
   velocityY = 700;
+  currentState = ""; // Forcefully reset state so jump sprite updates instantly
   setPlayerState("jump");
   beep(850, 0.06);
 }
@@ -324,6 +325,7 @@ function smashEnemy(obj, index) {
   playerY = Math.max(playerY, 8);
   velocityY = 620;
   jumping = true;
+  currentState = ""; // Forcefully reset state
   setPlayerState("jump");
   score += 25;
 
