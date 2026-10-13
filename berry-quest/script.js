@@ -56,7 +56,7 @@ const animations = {
       "assets/character/jump-2.png"
     ],
     frameDuration: 0.12,
-    loop: true
+    loop: false
   }
 };
 
