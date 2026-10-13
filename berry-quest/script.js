@@ -38,7 +38,7 @@ let soundEnabled = true;
 let audioCtx = null;
 
 // =========================================
-// ONLY IDLE ANIMATION (Simplified for Testing)
+// ANIMATIONS (Idle & Jump)
 // =========================================
 
 const animations = {
@@ -49,9 +49,18 @@ const animations = {
     ],
     frameDuration: 0.45,
     loop: true
+  },
+  jump: {
+    frames: [
+      "assets/character/jump-1.png"
+      
+    ],
+    frameDuration: 0.12,
+    loop: false
   }
 };
 
+let currentState = "idle";
 let animationFrame = 0;
 let animationTimer = 0;
 
@@ -62,15 +71,34 @@ function setSprite(src) {
   }
 }
 
+function setPlayerState(newState) {
+  if (!animations[newState]) return;
+  if (currentState === newState) return;
+
+  currentState = newState;
+  animationFrame = 0;
+  animationTimer = 0;
+  setSprite(animations[newState].frames[0]);
+}
+
 function updateAnimation(dt) {
-  const animation = animations.idle;
+  const animation = animations[currentState];
   if (!animation) return;
 
   animationTimer += dt;
 
   while (animationTimer >= animation.frameDuration) {
     animationTimer -= animation.frameDuration;
-    animationFrame = (animationFrame + 1) % animation.frames.length;
+
+    if (animationFrame < animation.frames.length - 1) {
+      animationFrame++;
+    } else if (animation.loop) {
+      animationFrame = 0;
+    } else {
+      animationTimer = 0;
+      break;
+    }
+
     setSprite(animation.frames[animationFrame]);
   }
 }
@@ -146,10 +174,10 @@ function startGame() {
   
   running = true;
 
-  animationFrame = 0;
-  animationTimer = 0;
+  currentState = "";
+  setPlayerState("idle");
+
   playerSprite.style.transform = "scaleX(1)";
-  setSprite(animations.idle.frames[0]);
 
   message.classList.add("hidden");
   updateHUD();
@@ -190,6 +218,7 @@ function jump() {
 
   jumping = true;
   velocityY = 700;
+  setPlayerState("jump");
   beep(850, 0.06);
 }
 
@@ -295,6 +324,7 @@ function smashEnemy(obj, index) {
   playerY = Math.max(playerY, 8);
   velocityY = 620;
   jumping = true;
+  setPlayerState("jump");
   score += 25;
 
   if (score > best) {
@@ -342,7 +372,17 @@ function gameLoop(timestamp) {
       }
     }
 
-    // Always update idle animation smoothly
+    // State machine for Jump vs Idle
+    if (playerY <= 0) {
+      jumping = false;
+    }
+
+    if (jumping) {
+      setPlayerState("jump");
+    } else {
+      setPlayerState("idle");
+    }
+
     updateAnimation(dt);
 
     // Spawns
@@ -487,6 +527,7 @@ window.addEventListener("resize", setPlayerPosition);
 // INITIALIZE
 // =========================================
 
+currentState = "idle";
 animationFrame = 0;
 animationTimer = 0;
 playerSprite.src = animations.idle.frames[0];
